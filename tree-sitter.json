@@ -1,0 +1,19 @@
+{
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/config.schema.json",
+  "grammars": [
+    {
+      "name": "ferron",
+      "camelcase": "Ferron",
+      "scope": "source.ferron",
+      "file-types": [
+        "fer"
+      ],
+      "injection-regex": "^ferron$"
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0",
+    "license": "MIT",
+    "description": "Ferron grammar for tree-sitter"
+  }
+}
