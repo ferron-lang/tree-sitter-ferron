@@ -19,11 +19,14 @@ record Report {
 (source_file
   (use_declaration
     (use_path
-      (use_prefix)
+      (use_item_path)
       (use_group
-        (type_identifier)
-        (type_identifier)
-        (type_identifier))))
+        (use_item
+          name: (type_identifier))
+        (use_item
+          name: (type_identifier))
+        (use_item
+          name: (type_identifier)))))
   (record_declaration
     (attribute
       name: (identifier)

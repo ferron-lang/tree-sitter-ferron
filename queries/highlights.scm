@@ -9,6 +9,9 @@
 (const_declaration) @keyword
 (record_declaration) @keyword
 (type_declaration) @keyword
+(trait_declaration) @keyword
+(impl_declaration) @keyword
+(associated_type_declaration) @keyword
 (resource_declaration) @keyword
 (capability_declaration) @keyword
 (actor_declaration) @keyword
@@ -23,6 +26,7 @@
 (return_statement) @keyword
 (continue_statement) @keyword
 (exit_statement) @keyword
+(visibility) @keyword
 
 (attribute
   name: (identifier) @attribute)
@@ -30,7 +34,7 @@
 (module_declaration
   (path) @module)
 
-(use_prefix) @module
+(use_item_path) @module
 
 (function_declaration
   name: (identifier) @function)
@@ -48,6 +52,12 @@
   name: (type_identifier) @type)
 
 (type_declaration
+  name: (type_identifier) @type)
+
+(trait_declaration
+  name: (type_identifier) @type)
+
+(associated_type_declaration
   name: (type_identifier) @type)
 
 (resource_declaration
