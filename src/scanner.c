@@ -5,12 +5,11 @@
 // starts with a continuation-only token, which is any operator except `-`, `!`,
 // `~` and `|` (they can start an expression), `.`, `,`, `in`, `not in`, `else`,
 // `and` or `or`. `(`, `[`, `{` and literals always start a new statement.
-// Whether the line before can end an expression, and whether a `(`/`[` is open,
-// needs no check: the parser accepts a terminator only after a whole statement,
-// and the scanner is not asked otherwise.
-// shortcut: a line ending in `..` ends here as an endless range, where the
-// compiler continues it (`..` can't end an expression); move `..`/`..=` into
-// this scanner if that layout ever shows up.
+// Whether the line before can end an expression (an endless `a..` can, `a..=`
+// can't), and whether a `(`/`[` is open, needs no check: the parser accepts a
+// terminator only after a whole statement, and the scanner is not asked
+// otherwise. `script/check-statement-ends.mjs` runs the compiler's
+// statement-end corpus against this.
 //
 // Items are grouped by keyword in the compiler, not by line breaks, so between
 // items a line starting with `{`, `|`, `where` or `receives` (or attributes

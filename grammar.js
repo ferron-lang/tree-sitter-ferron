@@ -620,14 +620,21 @@ export default grammar({
         ),
       ),
 
-    // `a..b`, `a..=b`, and the endless `a..`.
+    // `a..b`, `a..=b`, and the endless `a..`; `..=` needs its end.
     range_expression: ($) =>
       prec.left(
         PREC.range,
-        seq(
-          field("start", $._expression),
-          field("operator", choice("..", "..=")),
-          optional(field("end", $._expression)),
+        choice(
+          seq(
+            field("start", $._expression),
+            field("operator", ".."),
+            optional(field("end", $._expression)),
+          ),
+          seq(
+            field("start", $._expression),
+            field("operator", "..="),
+            field("end", $._expression),
+          ),
         ),
       ),
 
