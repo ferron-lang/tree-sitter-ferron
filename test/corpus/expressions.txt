@@ -1,0 +1,351 @@
+===================
+Operator precedence
+===================
+
+fn f() -> Unit {
+  let a = x |> f() || y && z == 1 + 2 * 3
+  let b = a & b == c
+  let c = -x >> 4 | ~big ^ 1 &+ 2 &* 3
+  let d = 5 not in xs
+  let e = (0..)
+  let f = 0..=9
+  let g = move file
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters)
+    (type_identifier)
+    (block
+      (let_statement
+        (identifier)
+        (binary_expression
+          (identifier)
+          (binary_expression
+            (call_expression
+              (identifier)
+              (arguments))
+            (binary_expression
+              (identifier)
+              (binary_expression
+                (identifier)
+                (binary_expression
+                  (number)
+                  (binary_expression
+                    (number)
+                    (number))))))))
+      (let_statement
+        (identifier)
+        (binary_expression
+          (binary_expression
+            (identifier)
+            (identifier))
+          (identifier)))
+      (let_statement
+        (identifier)
+        (binary_expression
+          (binary_expression
+            (unary_expression
+              (identifier))
+            (number))
+          (binary_expression
+            (unary_expression
+              (identifier))
+            (binary_expression
+              (number)
+              (binary_expression
+                (number)
+                (number))))))
+      (let_statement
+        (identifier)
+        (binary_expression
+          (number)
+          (identifier)))
+      (let_statement
+        (identifier)
+        (parenthesized_expression
+          (range_expression
+            (number))))
+      (let_statement
+        (identifier)
+        (range_expression
+          (number)
+          (number)))
+      (let_statement
+        (identifier)
+        (unary_expression
+          (identifier))))))
+
+================================
+Lambdas and function expressions
+================================
+
+fn f() -> Unit {
+  let a = |sum, x| sum + x
+  let b = || { let more = base + 1; more }
+  let c = fn(value: Point) -> Int { return value.x * value.y }
+  let d = |(k, v)| k
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters)
+    (type_identifier)
+    (block
+      (let_statement
+        (identifier)
+        (lambda_expression
+          (identifier)
+          (identifier)
+          (binary_expression
+            (identifier)
+            (identifier))))
+      (let_statement
+        (identifier)
+        (lambda_expression
+          (block
+            (let_statement
+              (identifier)
+              (binary_expression
+                (identifier)
+                (number)))
+            (expression_statement
+              (identifier)))))
+      (let_statement
+        (identifier)
+        (function_expression
+          (closure_parameters
+            (identifier)
+            (type_identifier))
+          (type_identifier)
+          (block
+            (return_statement
+              (binary_expression
+                (member_expression
+                  (identifier)
+                  (identifier))
+                (member_expression
+                  (identifier)
+                  (identifier)))))))
+      (let_statement
+        (identifier)
+        (lambda_expression
+          (tuple_pattern
+            (identifier)
+            (identifier))
+          (identifier))))))
+
+===================
+Postfix expressions
+===================
+
+fn f() -> Unit {
+  let a = env.fs.read_text(Path.from("a.txt")).context("reading")?
+  let b = tuple_item[A](items, 0usize)?
+  let c = grid[x, y]
+  let d = nested.0.1
+  let e = List[T].from_value(value)
+  let f = some.or(Some(9))
+  let g = triplet(z: 3, x: 1)
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters)
+    (type_identifier)
+    (block
+      (let_statement
+        (identifier)
+        (try_expression
+          (call_expression
+            (member_expression
+              (call_expression
+                (member_expression
+                  (member_expression
+                    (identifier)
+                    (identifier))
+                  (identifier))
+                (arguments
+                  (call_expression
+                    (member_expression
+                      (constructor_identifier)
+                      (identifier))
+                    (arguments
+                      (string
+                        (string_content))))))
+              (identifier))
+            (arguments
+              (string
+                (string_content))))))
+      (let_statement
+        (identifier)
+        (try_expression
+          (call_expression
+            (index_expression
+              (identifier)
+              (constructor_identifier))
+            (arguments
+              (identifier)
+              (number)))))
+      (let_statement
+        (identifier)
+        (index_expression
+          (identifier)
+          (identifier)
+          (identifier)))
+      (let_statement
+        (identifier)
+        (member_expression
+          (identifier)
+          (number)))
+      (let_statement
+        (identifier)
+        (call_expression
+          (member_expression
+            (index_expression
+              (constructor_identifier)
+              (constructor_identifier))
+            (identifier))
+          (arguments
+            (identifier))))
+      (let_statement
+        (identifier)
+        (call_expression
+          (member_expression
+            (identifier)
+            (identifier))
+          (arguments
+            (call_expression
+              (constructor_identifier)
+              (arguments
+                (number))))))
+      (let_statement
+        (identifier)
+        (call_expression
+          (identifier)
+          (arguments
+            (named_argument
+              (identifier)
+              (number))
+            (named_argument
+              (identifier)
+              (number))))))))
+
+===================
+Collection literals
+===================
+
+fn f() -> Unit {
+  let a = [1, 2, 3]
+  let b = {"a": 1, "b": 2}
+  let c = (1, "two")
+  let d = ()
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters)
+    (type_identifier)
+    (block
+      (let_statement
+        (identifier)
+        (list_literal
+          (number)
+          (number)
+          (number)))
+      (let_statement
+        (identifier)
+        (map_literal
+          (map_entry
+            (string
+              (string_content))
+            (number))
+          (map_entry
+            (string
+              (string_content))
+            (number))))
+      (let_statement
+        (identifier)
+        (tuple_expression
+          (number)
+          (string
+            (string_content))))
+      (let_statement
+        (identifier)
+        (unit_expression)))))
+
+===================
+Strings and numbers
+===================
+
+fn f() -> Unit {
+  let a = "total: {total}\n"
+  let b = "{tag:*^12}|{date:}|{m.get("k")}"
+  let c = "{{literal}}"
+  let d = r#"raw "quoted" text"#
+  let e = [1_000_000, 0xFF_FFu32, 1.5f64, 2.2e-16, 1.2300dec, 255u8]
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters)
+    (type_identifier)
+    (block
+      (let_statement
+        (identifier)
+        (string
+          (string_content)
+          (interpolation
+            (identifier))
+          (escape_sequence)))
+      (let_statement
+        (identifier)
+        (string
+          (interpolation
+            (identifier)
+            (format_spec))
+          (string_content)
+          (interpolation
+            (identifier))
+          (string_content)
+          (interpolation
+            (call_expression
+              (member_expression
+                (identifier)
+                (identifier))
+              (arguments
+                (string
+                  (string_content)))))))
+      (let_statement
+        (identifier)
+        (string
+          (brace_escape)
+          (string_content)
+          (brace_escape)))
+      (let_statement
+        (identifier)
+        (raw_string))
+      (let_statement
+        (identifier)
+        (list_literal
+          (number)
+          (number)
+          (number)
+          (number)
+          (number)
+          (number))))))

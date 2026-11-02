@@ -1,0 +1,379 @@
+===================================================
+Statements are separated by newlines and semicolons
+===================================================
+
+fn main(env: Env) -> Result[Unit, IoError] {
+  let total: Int = 0
+  var count = 1; count -= 1
+  values[0] = 3
+  pair.0 = 1
+  bits <<= 2u8
+  return Ok(Unit)
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (type_identifier)
+        (type_identifier)))
+    (block
+      (let_statement
+        (identifier)
+        (type_identifier)
+        (number))
+      (var_statement
+        (identifier)
+        (number))
+      (assignment_statement
+        (identifier)
+        (number))
+      (assignment_statement
+        (index_expression
+          (identifier)
+          (number))
+        (number))
+      (assignment_statement
+        (member_expression
+          (identifier)
+          (number))
+        (number))
+      (assignment_statement
+        (identifier)
+        (number))
+      (return_statement
+        (call_expression
+          (constructor_identifier)
+          (arguments
+            (constructor_identifier)))))))
+
+==========================
+Leading continuation lines
+==========================
+
+fn f() -> Unit {
+  let text = items
+    .map(|x| x + 1)
+    |> join(",")
+  let sum = a
+    + b
+  // a comment between statements
+  let next = sum
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters)
+    (type_identifier)
+    (block
+      (let_statement
+        (identifier)
+        (binary_expression
+          (call_expression
+            (member_expression
+              (identifier)
+              (identifier))
+            (arguments
+              (lambda_expression
+                (identifier)
+                (binary_expression
+                  (identifier)
+                  (number)))))
+          (call_expression
+            (identifier)
+            (arguments
+              (string
+                (string_content))))))
+      (let_statement
+        (identifier)
+        (binary_expression
+          (identifier)
+          (identifier)))
+      (line_comment)
+      (let_statement
+        (identifier)
+        (identifier)))))
+
+============
+Control flow
+============
+
+fn f(xs: List[Int]) -> Int {
+  outer: for (index, value) in xs.enumerate() {
+    if value == 0 {
+      continue outer
+    } else if let Some(x) = lookup(value) {
+      break
+    }
+    else {
+      return
+    }
+  }
+  while let Some(item) = queue.pop() {
+    total = total + item
+  }
+  with a = fs.open(path)?, b: File = fs.open(other)? {
+    use_both(a, b)
+  }
+  let Some(x) = maybe else {
+    return 0
+  }
+  return x
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)))))
+    (type_identifier)
+    (block
+      (for_statement
+        (label
+          (identifier))
+        (tuple_pattern
+          (identifier)
+          (identifier))
+        (call_expression
+          (member_expression
+            (identifier)
+            (identifier))
+          (arguments))
+        (block
+          (expression_statement
+            (if_expression
+              (binary_expression
+                (identifier)
+                (number))
+              (block
+                (continue_statement
+                  (identifier)))
+              (if_expression
+                (let_condition
+                  (constructor_pattern
+                    (constructor_identifier)
+                    (pattern_arguments
+                      (identifier)))
+                  (call_expression
+                    (identifier)
+                    (arguments
+                      (identifier))))
+                (block
+                  (break_statement))
+                (block
+                  (return_statement)))))))
+      (while_statement
+        (let_condition
+          (constructor_pattern
+            (constructor_identifier)
+            (pattern_arguments
+              (identifier)))
+          (call_expression
+            (member_expression
+              (identifier)
+              (identifier))
+            (arguments)))
+        (block
+          (assignment_statement
+            (identifier)
+            (binary_expression
+              (identifier)
+              (identifier)))))
+      (with_statement
+        (with_binding
+          (identifier)
+          (try_expression
+            (call_expression
+              (member_expression
+                (identifier)
+                (identifier))
+              (arguments
+                (identifier)))))
+        (with_binding
+          (identifier)
+          (type_identifier)
+          (try_expression
+            (call_expression
+              (member_expression
+                (identifier)
+                (identifier))
+              (arguments
+                (identifier)))))
+        (block
+          (expression_statement
+            (call_expression
+              (identifier)
+              (arguments
+                (identifier)
+                (identifier))))))
+      (let_statement
+        (constructor_pattern
+          (constructor_identifier)
+          (pattern_arguments
+            (identifier)))
+        (identifier)
+        (block
+          (return_statement
+            (number))))
+      (return_statement
+        (identifier)))))
+
+=====================
+Match expression arms
+=====================
+
+fn area(shape: Shape) -> f64 {
+  return match shape {
+    Circle(radius) => 3.14 * radius * radius
+    Rect(width, height) if width == height => width * width
+    Shape.Empty => return 0.0
+    Point { x: 1 | 2, .. } => {}
+    Some(value) => label = "big {value}"
+    _ => exit
+  }
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (primitive_type)
+    (block
+      (return_statement
+        (match_expression
+          (identifier)
+          (match_body
+            (match_arm
+              (constructor_pattern
+                (constructor_identifier)
+                (pattern_arguments
+                  (identifier)))
+              (binary_expression
+                (binary_expression
+                  (number)
+                  (identifier))
+                (identifier)))
+            (match_arm
+              (constructor_pattern
+                (constructor_identifier)
+                (pattern_arguments
+                  (identifier)
+                  (identifier)))
+              (binary_expression
+                (identifier)
+                (identifier))
+              (binary_expression
+                (identifier)
+                (identifier)))
+            (match_arm
+              (path_pattern
+                (type_identifier)
+                (type_identifier))
+              (return_statement
+                (number)))
+            (match_arm
+              (struct_pattern
+                (constructor_identifier)
+                (field_pattern
+                  (identifier)
+                  (or_pattern
+                    (number)
+                    (number)))
+                (rest_pattern))
+              (block))
+            (match_arm
+              (constructor_pattern
+                (constructor_identifier)
+                (pattern_arguments
+                  (identifier)))
+              (assignment_statement
+                (identifier)
+                (string
+                  (string_content)
+                  (interpolation
+                    (identifier)))))
+            (match_arm
+              (wildcard_pattern)
+              (exit_statement))))))))
+
+=============================================
+Struct literal in a condition head is a block
+=============================================
+
+fn f() -> Unit {
+  if x == Low { y }
+  for item in self.items { total += item }
+  let p = Point { x: 1, y, ..base }
+  let q = shapes.Point[Int] {}
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters)
+    (type_identifier)
+    (block
+      (expression_statement
+        (if_expression
+          (binary_expression
+            (identifier)
+            (constructor_identifier))
+          (block
+            (expression_statement
+              (identifier)))))
+      (for_statement
+        (identifier)
+        (member_expression
+          (self)
+          (identifier))
+        (block
+          (assignment_statement
+            (identifier)
+            (identifier))))
+      (let_statement
+        (identifier)
+        (struct_literal
+          (constructor_identifier)
+          (field_initializer_list
+            (field_initializer
+              (identifier)
+              (number))
+            (shorthand_field_initializer
+              (identifier))
+            (base_field_initializer
+              (identifier)))))
+      (let_statement
+        (identifier)
+        (struct_literal
+          (generic_type_identifier
+            (path_type
+              (identifier)
+              (type_identifier))
+            (type_arguments
+              (type_identifier)))
+          (field_initializer_list))))))

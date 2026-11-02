@@ -1,0 +1,404 @@
+================
+Use declarations
+================
+
+use std.env.Env
+use std.actor.{
+  ActorError,
+  Pid,
+}
+use pkg.a.{Status as AStatus, make as make_a}
+use pkg.show.Show as _
+
+---
+
+(source_file
+  (use_declaration
+    (use_path))
+  (use_declaration
+    (use_path)
+    (use_group
+      (use_item
+        (use_path))
+      (use_item
+        (use_path))))
+  (use_declaration
+    (use_path)
+    (use_group
+      (use_item
+        (use_path)
+        (use_alias
+          (type_identifier)))
+      (use_item
+        (use_path)
+        (use_alias
+          (identifier)))))
+  (use_declaration
+    (use_path)
+    (use_alias
+      (wildcard_import))))
+
+===================================================
+Struct with attributes, markers, and newline fields
+===================================================
+
+#[derive(Eq, Data)]
+pub struct Point[T: affine]: send {
+  /// Horizontal.
+  pub x: T
+  #[arg(short: "v", count)]
+  y: T,
+}
+
+---
+
+(source_file
+  (struct_declaration
+    (attribute
+      (identifier)
+      (attribute_arguments
+        (type_identifier)
+        (type_identifier)))
+    (visibility)
+    (type_identifier)
+    (type_parameters
+      (type_parameter
+        (type_identifier)
+        (trait_bounds
+          (primitive_type))))
+    (identifier)
+    (field_declaration_list
+      (line_comment)
+      (field_declaration
+        (visibility)
+        (identifier)
+        (type_identifier))
+      (field_declaration
+        (attribute
+          (identifier)
+          (attribute_arguments
+            (attribute_named_argument
+              (identifier)
+              (string
+                (string_content)))
+            (identifier)))
+        (identifier)
+        (type_identifier)))))
+
+============================================
+ADT with variant attributes and doc comments
+============================================
+
+pub type Signal: send =
+  /// `SIGINT`.
+  | Interrupt
+  #[data(rename: "term")]
+  | Terminate(code: Int, reason: String)
+type Small = | A | B
+
+---
+
+(source_file
+  (type_declaration
+    (visibility)
+    (type_identifier)
+    (identifier)
+    (line_comment)
+    (variant_list
+      (variant_declaration
+        (type_identifier))
+      (variant_declaration
+        (attribute
+          (identifier)
+          (attribute_arguments
+            (attribute_named_argument
+              (identifier)
+              (string
+                (string_content)))))
+        (type_identifier)
+        (variant_field_list
+          (field_declaration
+            (identifier)
+            (type_identifier))
+          (field_declaration
+            (identifier)
+            (type_identifier))))))
+  (type_declaration
+    (type_identifier)
+    (variant_list
+      (variant_declaration
+        (type_identifier))
+      (variant_declaration
+        (type_identifier)))))
+
+===============
+Refinement type
+===============
+
+type Port = Int where value >= 1 and value <= 65535
+
+---
+
+(source_file
+  (type_declaration
+    (type_identifier)
+    (type_identifier)
+    (binary_expression
+      (binary_expression
+        (identifier)
+        (number))
+      (binary_expression
+        (identifier)
+        (number)))))
+
+==============================
+Trait, impl, and where clauses
+==============================
+
+pub trait Error: Display + Debug {
+  type Item
+  static fn make[U](seed: Int) -> Option[U]
+  fn source(self) -> Option[AnyError] { return None }
+}
+
+impl[K, V: affine] BitOr[Map[K, V]] for Map[K, V]
+  where K: Hash + Eq, V: Clone[Output = V]
+  where K: Ord
+{
+  type Output = Map[K, V]
+  pub const EMPTY: Int = 0
+  pub fn into_inner(take self) -> R {
+    return self.inner
+  }
+}
+
+---
+
+(source_file
+  (trait_declaration
+    (visibility)
+    (type_identifier)
+    (trait_bounds
+      (type_identifier)
+      (type_identifier))
+    (declaration_list
+      (associated_type_declaration
+        (type_identifier))
+      (function_declaration
+        (static)
+        (identifier)
+        (type_parameters
+          (type_parameter
+            (type_identifier)))
+        (parameters
+          (parameter
+            (identifier)
+            (type_identifier)))
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier))))
+      (function_declaration
+        (identifier)
+        (parameters
+          (self_parameter
+            (self)))
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)))
+        (block
+          (return_statement
+            (constructor_identifier))))))
+  (impl_declaration
+    (type_parameters
+      (type_parameter
+        (type_identifier))
+      (type_parameter
+        (type_identifier)
+        (trait_bounds
+          (primitive_type))))
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)
+            (type_identifier)))))
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (type_identifier)
+        (type_identifier)))
+    (where_clause
+      (where_predicate
+        (type_identifier)
+        (trait_bounds
+          (type_identifier)
+          (type_identifier)))
+      (where_predicate
+        (type_identifier)
+        (trait_bounds
+          (generic_type
+            (type_identifier)
+            (type_arguments
+              (associated_type_binding
+                (type_identifier)
+                (type_identifier)))))))
+    (where_clause
+      (where_predicate
+        (type_identifier)
+        (trait_bounds
+          (type_identifier))))
+    (declaration_list
+      (associated_type_declaration
+        (type_identifier)
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)
+            (type_identifier))))
+      (const_declaration
+        (visibility)
+        (type_identifier)
+        (type_identifier)
+        (number))
+      (function_declaration
+        (visibility)
+        (identifier)
+        (parameters
+          (self_parameter
+            (take)
+            (self)))
+        (type_identifier)
+        (block
+          (return_statement
+            (member_expression
+              (self)
+              (identifier))))))))
+
+===============================
+Intrinsic function without body
+===============================
+
+#[intrinsic("panic")]
+pub fn panic(message: String) -> Never
+fn next() -> Unit {}
+
+---
+
+(source_file
+  (function_declaration
+    (attribute
+      (identifier)
+      (attribute_arguments
+        (string
+          (string_content))))
+    (visibility)
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (type_identifier))
+  (function_declaration
+    (identifier)
+    (parameters)
+    (type_identifier)
+    (block)))
+
+===================
+Actor with handlers
+===================
+
+actor Counter(initial: Int, done: Sender[Int]) receives CounterMsg {
+  var value = initial
+
+  on Add(amount) {
+    value += amount
+  }
+
+  on Stop {
+    exit
+  }
+
+  on child_failed(_, error) {
+    continue
+  }
+}
+
+---
+
+(source_file
+  (actor_declaration
+    (type_identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier))
+      (parameter
+        (identifier)
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)))))
+    (type_identifier)
+    (actor_body
+      (var_statement
+        (identifier)
+        (identifier))
+      (on_handler
+        (type_identifier)
+        (pattern_arguments
+          (identifier))
+        (block
+          (assignment_statement
+            (identifier)
+            (identifier))))
+      (on_handler
+        (type_identifier)
+        (block
+          (exit_statement)))
+      (on_handler
+        (identifier)
+        (pattern_arguments
+          (wildcard_pattern)
+          (identifier))
+        (block
+          (continue_statement))))))
+
+==================
+Resource and const
+==================
+
+resource Token
+pub resource File {
+}
+const DIGITS: String = r"\d+"
+const TWO: WorkerCount =
+  comptime WorkerCount.parse("2")
+
+---
+
+(source_file
+  (resource_declaration
+    (type_identifier))
+  (resource_declaration
+    (visibility)
+    (type_identifier))
+  (const_declaration
+    (type_identifier)
+    (type_identifier)
+    (raw_string))
+  (const_declaration
+    (type_identifier)
+    (type_identifier)
+    (unary_expression
+      (call_expression
+        (member_expression
+          (constructor_identifier)
+          (identifier))
+        (arguments
+          (string
+            (string_content)))))))

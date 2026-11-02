@@ -1,82 +1,120 @@
 (line_comment) @comment
 (block_comment) @comment
+
 (string) @string
+(raw_string) @string
+(string_content) @string
+(escape_sequence) @string.escape
+(brace_escape) @string.escape
+(format_spec) @string.special
+(interpolation
+  "{" @punctuation.special
+  "}" @punctuation.special)
+
 (number) @number
 (boolean) @constant.builtin
 
-(module_declaration) @keyword
-(use_declaration) @keyword
-(const_declaration) @keyword
-(record_declaration) @keyword
-(type_declaration) @keyword
-(trait_declaration) @keyword
-(impl_declaration) @keyword
-(associated_type_declaration) @keyword
-(resource_declaration) @keyword
-(capability_declaration) @keyword
-(actor_declaration) @keyword
-(test_declaration) @keyword
-(function_declaration) @keyword
-(uses_clause) @keyword
-(scheduler_clause) @keyword
-(match_expression) @keyword
-(with_statement) @keyword
-(let_statement) @keyword
-(var_statement) @keyword
-(return_statement) @keyword
-(continue_statement) @keyword
-(exit_statement) @keyword
-(visibility) @keyword
+[
+  "actor"
+  "as"
+  "const"
+  "dyn"
+  "fn"
+  "impl"
+  "on"
+  "receives"
+  "resource"
+  "struct"
+  "trait"
+  "type"
+  "use"
+  "where"
+  "let"
+  "var"
+  "with"
+  "move"
+  "comptime"
+  "not"
+  "in"
+  "and"
+  "or"
+] @keyword
+
+[
+  "if"
+  "else"
+  "match"
+  "for"
+  "while"
+  "return"
+  "break"
+  "continue"
+  (exit_statement)
+] @keyword.control
+
+[
+  (visibility)
+  (static)
+  (take)
+] @keyword.modifier
+
+(self) @variable.builtin
 
 (attribute
+  "#" @attribute
   name: (identifier) @attribute)
 
-(module_declaration
-  (path) @module)
-
-(use_item_path) @module
+(use_path) @module
+(path_type
+  (identifier) @module)
 
 (function_declaration
   name: (identifier) @function)
 
-(function_signature
-  name: (identifier) @function)
-
 (call_expression
   function: (identifier) @function.call)
+(call_expression
+  function: (member_expression
+    property: (identifier) @function.method.call))
 
 (member_expression
   property: (identifier) @property)
-
-(record_declaration
-  name: (type_identifier) @type)
-
-(type_declaration
-  name: (type_identifier) @type)
-
-(trait_declaration
-  name: (type_identifier) @type)
-
-(associated_type_declaration
-  name: (type_identifier) @type)
-
-(resource_declaration
-  name: (type_identifier) @type)
-
-(capability_declaration
-  name: (type_identifier) @type)
-
-(actor_declaration
-  name: (type_identifier) @type)
-
-(type_identifier) @type
-(constructor_identifier) @constructor
+(field_declaration
+  name: (identifier) @property)
+(field_initializer
+  name: (identifier) @property)
+(shorthand_field_initializer
+  (identifier) @property)
+(field_pattern
+  name: (identifier) @property)
+(named_argument
+  name: (identifier) @variable.parameter)
 
 (parameter
   name: (identifier) @variable.parameter)
+(closure_parameters
+  name: (identifier) @variable.parameter)
 
-(field_declaration
-  name: (identifier) @property)
+(label
+  (identifier) @label)
+(break_statement
+  label: (identifier) @label)
+(continue_statement
+  label: (identifier) @label)
 
-(field_initializer
-  name: (identifier) @property)
+(primitive_type) @type.builtin
+(type_identifier) @type
+(constructor_identifier) @constructor
+(variant_declaration
+  name: (type_identifier) @constructor)
+
+[
+  "+" "-" "*" "/" "%" "&+" "&-" "&*"
+  "==" "!=" "<" "<=" ">" ">="
+  "&&" "||" "!" "~" "&" "|" "^" "<<" ">>" "|>"
+  "=" "+=" "-=" "*=" "/=" "%=" "&=" "|=" "^=" "<<=" ">>="
+  ".." "..=" "?" "->" "=>"
+] @operator
+
+["(" ")" "[" "]" "{" "}"] @punctuation.bracket
+["," "." ":" ";"] @punctuation.delimiter

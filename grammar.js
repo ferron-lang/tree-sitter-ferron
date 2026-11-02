@@ -6,56 +6,81 @@
 /// <reference types="tree-sitter-cli/dsl" />
 // @ts-check
 
+// Mirrors the compiler's Pratt binding powers (`ast/expr/parser.rs`).
 const PREC = {
-  assign: 1,
-  range: 2,
-  or: 3,
-  and: 4,
-  compare: 5,
-  add: 6,
-  multiply: 7,
-  unary: 8,
-  postfix: 9,
+  assign: -1,
+  pipe: 1,
+  or: 2,
+  and: 3,
+  compare: 4,
+  range: 5,
+  bit_or: 6,
+  bit_xor: 7,
+  bit_and: 8,
+  shift: 9,
+  add: 10,
+  multiply: 11,
+  unary: 12,
+  postfix: 13,
 };
 
-const commaSep = (rule) =>
-  optional(seq(rule, repeat(seq(",", rule)), optional(",")));
+const ASSIGNMENT_OPERATORS = [
+  "=",
+  "+=",
+  "-=",
+  "*=",
+  "/=",
+  "%=",
+  "&=",
+  "|=",
+  "^=",
+  "<<=",
+  ">>=",
+];
+
+const commaSep = (rule) => optional(commaSep1(rule));
 const commaSep1 = (rule) => seq(rule, repeat(seq(",", rule)), optional(","));
 const sep1 = (rule, separator) => seq(rule, repeat(seq(separator, rule)));
+// Newline- or `;`-separated members of a braced body.
+const lines = ($, rule) =>
+  optional(seq(sep1(rule, $._terminator), optional($._terminator)));
 
 export default grammar({
   name: "ferron",
 
   word: ($) => $.identifier,
 
+  externals: ($) => [$._newline, $._error_sentinel],
+
   extras: ($) => [/[\s\uFEFF\u2060\u200B]/, $.line_comment, $.block_comment],
 
+  supertypes: ($) => [$._expression, $._type, $._pattern],
+
   conflicts: ($) => [
-    [$.map_literal, $.block],
+    [$._expression, $.generic_type_identifier],
+    [$._expression, $.struct_literal],
     [$._expression, $.path_type],
-    [$._expression, $._type],
-    [$.type_identifier, $.constructor_identifier],
+    [$._expression, $.label],
   ],
 
   rules: {
-    source_file: ($) => repeat($._declaration),
+    source_file: ($) => lines($, $._item),
+
+    _terminator: ($) => choice($._newline, ";"),
 
     line_comment: (_) => token(seq("//", /.*/)),
-    block_comment: (_) => token(seq("/*", /([^*]|\*[^/])*/, "*/")),
+    block_comment: (_) => token(seq("/*", /([^*]|\*+[^*/])*\*+/, "/")),
 
-    _declaration: ($) =>
+    _item: ($) =>
       choice(
-        $.module_declaration,
         $.use_declaration,
         $.const_declaration,
-        $.record_declaration,
+        $.struct_declaration,
         $.type_declaration,
         $.trait_declaration,
         $.impl_declaration,
         $.resource_declaration,
-        $.capability_declaration,
         $.actor_declaration,
-        $.test_declaration,
         $.function_declaration,
       ),
 
@@ -63,55 +88,52 @@ export default grammar({
 
     attribute: ($) =>
       seq(
-        "#[",
+        "#",
+        "[",
         field("name", $.identifier),
-        optional(field("arguments", $.attribute_argument_list)),
+        optional(field("arguments", $.attribute_arguments)),
         "]",
       ),
-
-    attribute_argument_list: ($) =>
-      seq("(", commaSep($._attribute_argument), ")"),
-    _attribute_argument: ($) =>
+    attribute_arguments: ($) =>
+      seq(
+        "(",
+        commaSep(choice($.attribute_named_argument, $._attribute_value)),
+        ")",
+      ),
+    attribute_named_argument: ($) =>
+      seq(field("name", $.identifier), ":", field("value", $._attribute_value)),
+    _attribute_value: ($) =>
       choice(
-        $.named_argument,
         $.identifier,
         $.type_identifier,
         $.string,
+        $.raw_string,
         $.number,
+        $.negative_number,
+        $.boolean,
       ),
 
-    module_declaration: ($) => seq("module", $.path),
-
-    use_declaration: ($) => seq("use", $.use_path, optional(";")),
-    use_path: ($) =>
-      choice(
-        seq($.use_item_path, ".", $.use_group),
-        seq($.use_item_path, optional($.use_alias)),
-      ),
-    use_item_path: (_) =>
-      token(
-        seq(/[a-z_][A-Za-z0-9_]*/, repeat(seq(".", /[A-Za-z_][A-Za-z0-9_]*/))),
-      ),
-    use_group: ($) => seq("{", commaSep1($.use_item), "}"),
-    use_item: ($) =>
+    // `use std.io.{Reader, Writer as W}`; segments may be keywords.
+    use_declaration: ($) =>
       seq(
-        field(
-          "name",
-          choice($.identifier, $.type_identifier, $.constructor_identifier),
+        optional($.visibility),
+        "use",
+        field("path", $.use_path),
+        choice(
+          seq(".", field("group", $.use_group)),
+          optional($.use_alias),
         ),
-        optional($.use_alias),
       ),
+    use_path: (_) =>
+      token(seq(/[A-Za-z_][A-Za-z0-9_]*/, repeat(seq(".", /[A-Za-z_][A-Za-z0-9_]*/)))),
+    use_group: ($) => seq("{", commaSep1($.use_item), "}"),
+    use_item: ($) => seq(field("path", $.use_path), optional($.use_alias)),
     use_alias: ($) =>
       seq(
         "as",
         field(
           "alias",
-          choice(
-            $.identifier,
-            $.type_identifier,
-            $.constructor_identifier,
-            $.wildcard_import,
-          ),
+          choice($.identifier, $.type_identifier, $.wildcard_import),
         ),
       ),
     wildcard_import: (_) => "_",
@@ -121,56 +143,111 @@ export default grammar({
         repeat($.attribute),
         optional($.visibility),
         "const",
-        field("name", choice($.identifier, $.constructor_identifier)),
+        field("name", choice($.identifier, $.type_identifier)),
         optional(seq(":", field("type", $._type))),
         "=",
         field("value", $._expression),
       ),
 
-    record_declaration: ($) =>
+    struct_declaration: ($) =>
       seq(
         repeat($.attribute),
         optional($.visibility),
-        "record",
+        "struct",
         field("name", $.type_identifier),
-        optional(field("parameters", $.type_parameter_list)),
+        optional(field("type_parameters", $.type_parameters)),
+        optional(seq(":", field("marker", $.identifier))),
         field("body", $.field_declaration_list),
       ),
-
     field_declaration_list: ($) =>
-      seq("{", repeat(seq($.field_declaration, optional(","))), "}"),
+      seq(
+        "{",
+        optional(
+          seq(
+            sep1($.field_declaration, choice(",", $._terminator)),
+            optional(choice(",", $._terminator)),
+          ),
+        ),
+        "}",
+      ),
     field_declaration: ($) =>
-      seq(field("name", $.identifier), ":", field("type", $._type)),
+      seq(
+        repeat($.attribute),
+        optional($.visibility),
+        field("name", $.identifier),
+        ":",
+        field("type", $._type),
+      ),
 
+    // ADTs (`= | A(x: T) | B`) and refinements (`= Int where value > 0`).
     type_declaration: ($) =>
       seq(
         repeat($.attribute),
         optional($.visibility),
         "type",
         field("name", $.type_identifier),
-        optional(field("parameters", $.type_parameter_list)),
-        optional(seq(":", field("trait", $.identifier))),
+        optional(field("type_parameters", $.type_parameters)),
+        optional(seq(":", field("marker", $.identifier))),
         "=",
-        choice(field("variants", $.variant_list), field("value", $._type)),
-        optional(seq("where", field("constraint", $._expression))),
-      ),
-
-    variant_list: ($) =>
-      prec.right(
-        seq(
-          "|",
-          $.variant_declaration,
-          repeat(seq("|", $.variant_declaration)),
+        choice(
+          field("variants", $.variant_list),
+          seq(
+            field("value", $._type),
+            optional(seq("where", field("predicate", $._expression))),
+          ),
         ),
       ),
+    variant_list: ($) => prec.right(repeat1($.variant_declaration)),
     variant_declaration: ($) =>
       prec.right(
         seq(
-          field("name", $.constructor_identifier),
+          repeat($.attribute),
+          "|",
+          field("name", $.type_identifier),
           optional(field("fields", $.variant_field_list)),
         ),
       ),
     variant_field_list: ($) => seq("(", commaSep($.field_declaration), ")"),
+
+    trait_declaration: ($) =>
+      seq(
+        repeat($.attribute),
+        optional($.visibility),
+        "trait",
+        field("name", $.type_identifier),
+        optional(field("type_parameters", $.type_parameters)),
+        optional(seq(":", field("supertraits", $.trait_bounds))),
+        repeat($.where_clause),
+        field("body", $.declaration_list),
+      ),
+
+    impl_declaration: ($) =>
+      seq(
+        repeat($.attribute),
+        optional($.visibility),
+        "impl",
+        optional(field("type_parameters", $.type_parameters)),
+        choice(
+          seq(field("trait", $._type), "for", field("type", $._type)),
+          field("type", $._type),
+        ),
+        repeat($.where_clause),
+        field("body", $.declaration_list),
+      ),
+
+    declaration_list: ($) =>
+      seq(
+        "{",
+        lines(
+          $,
+          choice(
+            $.associated_type_declaration,
+            $.const_declaration,
+            $.function_declaration,
+          ),
+        ),
+        "}",
+      ),
 
     associated_type_declaration: ($) =>
       seq(
@@ -179,114 +256,15 @@ export default grammar({
         optional(seq("=", field("value", $._type))),
       ),
 
-    trait_declaration: ($) =>
-      seq(
-        repeat($.attribute),
-        optional($.visibility),
-        "trait",
-        field("name", $.type_identifier),
-        optional(field("parameters", $.type_parameter_list)),
-        optional($.where_clause),
-        field("body", $.trait_body),
-      ),
-
-    trait_body: ($) =>
-      seq(
-        "{",
-        repeat(
-          choice(
-            $.associated_type_declaration,
-            $.function_signature,
-            $.function_declaration,
-          ),
-        ),
-        "}",
-      ),
-
-    impl_declaration: ($) =>
-      seq(
-        repeat($.attribute),
-        optional($.visibility),
-        "impl",
-        optional(field("parameters", $.type_parameter_list)),
-        choice(
-          seq(field("trait", $._type), "for", field("target", $._type)),
-          field("target", $._type),
-        ),
-        optional($.where_clause),
-        field("body", $.impl_body),
-      ),
-
-    impl_body: ($) =>
-      seq(
-        "{",
-        repeat(
-          choice(
-            $.associated_type_declaration,
-            $.const_declaration,
-            $.function_signature,
-            $.function_declaration,
-          ),
-        ),
-        "}",
-      ),
-
-    where_clause: ($) =>
-      seq("where", $.where_constraint, repeat(seq(",", $.where_constraint))),
-    where_constraint: ($) =>
-      seq(field("left", $._type), ":", field("bound", $._type)),
-
     resource_declaration: ($) =>
-      seq(
-        repeat($.attribute),
-        optional($.visibility),
-        "resource",
-        field("name", $.type_identifier),
-      ),
-
-    capability_declaration: ($) =>
-      seq(
-        repeat($.attribute),
-        optional($.visibility),
-        "cap",
-        field("name", $.type_identifier),
-        field("body", $.capability_body),
-      ),
-
-    capability_body: ($) =>
-      seq(
-        "{",
-        repeat(choice($.function_signature, $.function_declaration)),
-        "}",
-      ),
-
-    function_signature: ($) =>
-      seq(
-        repeat($.attribute),
-        optional($.visibility),
-        "fn",
-        field("name", $.identifier),
-        optional("!"),
-        optional(field("type_parameters", $.type_parameter_list)),
-        field("parameters", $.parameter_list),
-        optional(seq("->", field("return_type", $._type))),
-        optional($.where_clause),
-        optional($.uses_clause),
-      ),
-
-    function_declaration: ($) =>
-      seq(
-        repeat($.attribute),
-        optional($.visibility),
-        "fn",
-        field("name", $.identifier),
-        optional("!"),
-        optional(field("type_parameters", $.type_parameter_list)),
-        field("parameters", $.parameter_list),
-        optional(seq("->", field("return_type", $._type))),
-        optional($.where_clause),
-        optional($.uses_clause),
-        field("body", $.block),
+      prec.right(
+        seq(
+          repeat($.attribute),
+          optional($.visibility),
+          "resource",
+          field("name", $.type_identifier),
+          optional(seq("{", "}")),
+        ),
       ),
 
     actor_declaration: ($) =>
@@ -295,102 +273,123 @@ export default grammar({
         optional($.visibility),
         "actor",
         field("name", $.type_identifier),
-        field("parameters", $.parameter_list),
+        field("parameters", $.parameters),
         optional(seq("receives", field("receives", $._type))),
-        optional($.uses_clause),
         field("body", $.actor_body),
       ),
-
     actor_body: ($) =>
-      seq("{", repeat(choice($.on_handler, $._statement, $._declaration)), "}"),
-
+      seq("{", lines($, choice($.on_handler, $._statement)), "}"),
     on_handler: ($) =>
-      seq("on", field("pattern", $.pattern), field("body", $.block)),
-
-    test_declaration: ($) =>
       seq(
-        repeat($.attribute),
-        optional($.visibility),
-        "test",
-        field("name", $.string),
-        optional(field("parameters", $.parameter_list)),
-        optional($.scheduler_clause),
-        optional($.uses_clause),
+        "on",
+        field("message", choice($.identifier, $.type_identifier, $.path_type)),
+        optional(field("arguments", $.pattern_arguments)),
         field("body", $.block),
       ),
 
-    scheduler_clause: ($) =>
-      seq(
-        "scheduler",
-        field("name", $.identifier),
-        optional(field("arguments", $.argument_list)),
+    // A body-less function is an intrinsic or a trait requirement.
+    function_declaration: ($) =>
+      prec.right(
+        seq(
+          repeat($.attribute),
+          optional($.visibility),
+          optional($.static),
+          "fn",
+          field("name", $.identifier),
+          optional(field("type_parameters", $.type_parameters)),
+          field("parameters", $.parameters),
+          optional(seq("->", field("return_type", $._type))),
+          repeat($.where_clause),
+          optional(field("body", $.block)),
+        ),
       ),
+    static: (_) => "static",
 
-    uses_clause: ($) => seq("uses", field("effects", $.effect_list)),
-    effect_list: ($) => seq("[", commaSep($.effect_path), "]"),
-    effect_path: ($) => prec.left(sep1($.identifier, ".")),
-
-    parameter_list: ($) =>
+    parameters: ($) =>
       seq("(", commaSep(choice($.self_parameter, $.parameter)), ")"),
+    self_parameter: ($) => seq(optional($.take), $.self),
     parameter: ($) =>
-      seq(field("name", $.identifier), ":", field("type", $._type)),
-    self_parameter: (_) => "self",
-
-    type_parameter_list: ($) => seq("[", commaSep($.type_identifier), "]"),
-    type_argument_list: ($) =>
-      seq("[", commaSep(choice($.associated_type_binding, $._type)), "]"),
-    associated_type_binding: ($) =>
       seq(
-        field("name", choice($.identifier, $.type_identifier)),
-        "=",
-        field("value", $._type),
+        field("name", $.identifier),
+        ":",
+        optional($.take),
+        field("type", $._type),
       ),
-    type_list: ($) => seq("(", commaSep($._type), ")"),
+    take: (_) => "take",
+    self: (_) => "self",
+
+    type_parameters: ($) => seq("[", commaSep1($.type_parameter), "]"),
+    type_parameter: ($) =>
+      seq(
+        field("name", $.type_identifier),
+        optional(seq(":", field("bounds", $.trait_bounds))),
+      ),
+    trait_bounds: ($) => sep1($._type, "+"),
+
+    where_clause: ($) => seq("where", commaSep1($.where_predicate)),
+    where_predicate: ($) =>
+      seq(field("left", $._type), ":", field("bounds", $.trait_bounds)),
+
+    // Types
 
     _type: ($) =>
       choice(
         $.generic_type,
         $.function_type,
+        $.callable_type,
+        $.tuple_type,
         $.path_type,
         $.type_identifier,
-        $.identifier,
-        $.tuple_type,
+        alias($.identifier, $.primitive_type),
       ),
 
     generic_type: ($) =>
       prec(
         1,
         seq(
-          field("name", choice($.path_type, $.type_identifier, $.identifier)),
-          field("arguments", $.type_argument_list),
+          field("name", choice($.path_type, $.type_identifier, alias($.identifier, $.primitive_type))),
+          field("arguments", $.type_arguments),
         ),
       ),
-
-    function_type: ($) =>
-      seq(
-        "fn",
-        field("parameters", $.type_list),
-        "->",
-        field("return_type", $._type),
-      ),
+    type_arguments: ($) =>
+      seq("[", commaSep1(choice($.associated_type_binding, $._type)), "]"),
+    associated_type_binding: ($) =>
+      seq(field("name", $.type_identifier), "=", field("value", $._type)),
 
     path_type: ($) =>
       seq(
         choice($.identifier, $.type_identifier),
         repeat1(seq(".", choice($.identifier, $.type_identifier))),
       ),
+
+    function_type: ($) =>
+      prec.right(
+        seq(
+          "fn",
+          field("parameters", $.tuple_type),
+          optional(seq("->", field("return_type", $._type))),
+        ),
+      ),
+
+    callable_type: ($) =>
+      seq(choice("dyn", "impl"), field("type", choice($.generic_type, $.type_identifier))),
+
     tuple_type: ($) => seq("(", commaSep($._type), ")"),
 
-    block: ($) => seq("{", repeat($._statement), "}"),
+    // Statements
+
+    block: ($) => prec(1, seq("{", lines($, $._statement), "}")),
 
     _statement: ($) =>
       choice(
         $.let_statement,
         $.var_statement,
         $.return_statement,
+        $.break_statement,
         $.continue_statement,
         $.exit_statement,
         $.for_statement,
+        $.while_statement,
         $.with_statement,
         $.assignment_statement,
         $.expression_statement,
@@ -399,9 +398,10 @@ export default grammar({
     let_statement: ($) =>
       seq(
         "let",
-        field("name", $.identifier),
+        field("pattern", $._pattern),
         optional(seq(":", field("type", $._type))),
         optional(seq("=", field("value", $._expression))),
+        optional(seq("else", field("alternative", $.block))),
       ),
 
     var_statement: ($) =>
@@ -412,115 +412,156 @@ export default grammar({
         optional(seq("=", field("value", $._expression))),
       ),
 
-    return_statement: ($) => seq("return", $._expression),
-    continue_statement: (_) => "continue",
+    return_statement: ($) =>
+      prec.right(seq("return", optional(field("value", $._expression)))),
+    break_statement: ($) =>
+      prec.right(seq("break", optional(field("label", $.identifier)))),
+    continue_statement: ($) =>
+      prec.right(seq("continue", optional(field("label", $.identifier)))),
     exit_statement: (_) => "exit",
+
+    label: ($) => seq($.identifier, ":"),
 
     for_statement: ($) =>
       seq(
+        optional(field("label", $.label)),
         "for",
-        field("pattern", $.pattern),
+        field("pattern", $._pattern),
         "in",
         field("value", $._expression),
         field("body", $.block),
       ),
 
-    with_statement: ($) =>
+    while_statement: ($) =>
       seq(
-        "with",
+        optional(field("label", $.label)),
+        "while",
+        field("condition", choice($._expression, $.let_condition)),
+        field("body", $.block),
+      ),
+
+    with_statement: ($) =>
+      seq("with", commaSep1($.with_binding), field("body", $.block)),
+    with_binding: ($) =>
+      seq(
         field("name", $.identifier),
         optional(seq(":", field("type", $._type))),
         "=",
         field("value", $._expression),
-        field("body", $.block),
       ),
 
     assignment_statement: ($) =>
       prec.right(
         PREC.assign,
         seq(
-          field(
-            "left",
-            choice($.identifier, $.member_expression, $.index_expression),
-          ),
-          "=",
+          field("left", $._expression),
+          field("operator", choice(...ASSIGNMENT_OPERATORS)),
           field("right", $._expression),
         ),
       ),
 
     expression_statement: ($) => $._expression,
 
+    // Expressions
+
     _expression: ($) =>
       choice(
         $.match_expression,
-        $.comptime_expression,
-        $.lambda_expression,
         $.if_expression,
+        $.lambda_expression,
+        $.function_expression,
         $.binary_expression,
+        $.range_expression,
         $.unary_expression,
         $.try_expression,
         $.call_expression,
         $.member_expression,
         $.index_expression,
-        $.record_literal,
+        $.struct_literal,
         $.map_literal,
         $.list_literal,
+        $.tuple_expression,
+        $.unit_expression,
         $.parenthesized_expression,
-        $.identifier,
-        $.constructor_identifier,
-        $.number,
         $.string,
+        $.raw_string,
+        $.number,
         $.boolean,
+        $.self,
+        $.identifier,
+        alias($.type_identifier, $.constructor_identifier),
       ),
 
     match_expression: ($) =>
       seq("match", field("value", $._expression), field("body", $.match_body)),
-
-    match_body: ($) => seq("{", repeat($.match_arm), "}"),
+    match_body: ($) => seq("{", lines($, $.match_arm), "}"),
     match_arm: ($) =>
       seq(
-        field("pattern", $.pattern),
+        field("pattern", $._pattern),
+        optional(seq("if", field("guard", $._expression))),
         "=>",
         field(
           "value",
           choice(
-            $.block,
+            prec(1, $.block),
             $.return_statement,
+            $.break_statement,
             $.continue_statement,
             $.exit_statement,
+            $.assignment_statement,
             $._expression,
           ),
         ),
-        optional(","),
       ),
 
     if_expression: ($) =>
       prec.right(
         seq(
           "if",
-          field("condition", $._expression),
+          field("condition", choice($._expression, $.let_condition)),
           field("consequence", $.block),
           optional(
             seq("else", field("alternative", choice($.block, $.if_expression))),
           ),
         ),
       ),
-
-    comptime_expression: ($) => seq("comptime", $._expression),
+    let_condition: ($) =>
+      seq("let", field("pattern", $._pattern), "=", field("value", $._expression)),
 
     lambda_expression: ($) =>
+      prec.right(
+        seq(
+          choice("||", seq("|", commaSep($._binding_pattern), "|")),
+          field("body", choice(prec(1, $.block), $._expression)),
+        ),
+      ),
+
+    function_expression: ($) =>
       seq(
-        "|",
-        commaSep($.identifier),
-        "|",
-        field("body", choice($.block, $._expression)),
+        "fn",
+        field("parameters", $.closure_parameters),
+        optional(seq("->", field("return_type", $._type))),
+        field("body", $.block),
+      ),
+    closure_parameters: ($) =>
+      seq(
+        "(",
+        commaSep(
+          seq(
+            field("name", $.identifier),
+            optional(seq(":", field("type", $._type))),
+          ),
+        ),
+        ")",
       ),
 
     binary_expression: ($) =>
       choice(
         ...[
-          ["++", PREC.add],
+          ["|>", PREC.pipe],
+          ["||", PREC.or],
           ["or", PREC.or],
+          ["&&", PREC.and],
           ["and", PREC.and],
           ["==", PREC.compare],
           ["!=", PREC.compare],
@@ -528,13 +569,22 @@ export default grammar({
           ["<=", PREC.compare],
           [">", PREC.compare],
           [">=", PREC.compare],
-          ["..<", PREC.range],
-          ["..", PREC.range],
+          ["in", PREC.compare],
+          [seq("not", "in"), PREC.compare],
+          ["|", PREC.bit_or],
+          ["^", PREC.bit_xor],
+          ["&", PREC.bit_and],
+          ["<<", PREC.shift],
+          [">>", PREC.shift],
           ["+", PREC.add],
           ["-", PREC.add],
+          ["++", PREC.add],
+          ["&+", PREC.add],
+          ["&-", PREC.add],
           ["*", PREC.multiply],
           ["/", PREC.multiply],
           ["%", PREC.multiply],
+          ["&*", PREC.multiply],
         ].map(([operator, precedence]) =>
           prec.left(
             precedence,
@@ -547,11 +597,22 @@ export default grammar({
         ),
       ),
 
+    // `a..b`, `a..=b`, and the endless `a..`.
+    range_expression: ($) =>
+      prec.left(
+        PREC.range,
+        seq(
+          field("start", $._expression),
+          field("operator", choice("..", "..=")),
+          optional(field("end", $._expression)),
+        ),
+      ),
+
     unary_expression: ($) =>
       prec(
         PREC.unary,
         seq(
-          field("operator", choice("!", "-", "not")),
+          field("operator", choice("-", "!", "~", "move", "comptime")),
           field("argument", $._expression),
         ),
       ),
@@ -562,127 +623,202 @@ export default grammar({
     call_expression: ($) =>
       prec(
         PREC.postfix,
-        seq(
-          field(
-            "function",
-            choice($.identifier, $.constructor_identifier, $.member_expression),
-          ),
-          optional("!"),
-          optional(field("type_arguments", $.type_argument_list)),
-          field("arguments", $.argument_list),
-        ),
+        seq(field("function", $._expression), field("arguments", $.arguments)),
       ),
-
-    member_expression: ($) =>
-      prec.left(
-        PREC.postfix,
-        seq(
-          field("object", $._expression),
-          ".",
-          field("property", $.identifier),
-        ),
-      ),
-
-    index_expression: ($) =>
-      prec(
-        PREC.postfix,
-        seq(
-          field(
-            "collection",
-            choice(
-              $.identifier,
-              $.constructor_identifier,
-              $.member_expression,
-              $.call_expression,
-              $.index_expression,
-            ),
-          ),
-          "[",
-          field("index", $._expression),
-          "]",
-        ),
-      ),
-
-    argument_list: ($) =>
+    arguments: ($) =>
       seq("(", commaSep(choice($.named_argument, $._expression)), ")"),
     named_argument: ($) =>
       seq(field("name", $.identifier), ":", field("value", $._expression)),
 
-    parenthesized_expression: ($) => seq("(", $._expression, ")"),
-    list_literal: ($) => seq("[", commaSep($._expression), "]"),
-
-    record_literal: ($) =>
+    member_expression: ($) =>
       prec(
         PREC.postfix,
         seq(
+          field("object", $._expression),
+          ".",
+          field(
+            "property",
+            choice(
+              $.identifier,
+              alias($.type_identifier, $.constructor_identifier),
+              alias($._tuple_index, $.number),
+            ),
+          ),
+        ),
+      ),
+    // `t.0.1` lexes `0.1` as one token.
+    _tuple_index: (_) => /[0-9]+(\.[0-9]+)?/,
+
+    // Also covers explicit type arguments: `f[T](x)`, `List[T].new()`.
+    index_expression: ($) =>
+      prec(
+        PREC.postfix,
+        seq(
+          field("value", $._expression),
+          "[",
+          commaSep1(field("index", $._expression)),
+          "]",
+        ),
+      ),
+
+    // Lowest dynamic precedence: in `if x == Low {` the `{` opens the block.
+    struct_literal: ($) =>
+      prec.dynamic(
+        -1,
+        seq(
           field(
             "name",
-            choice($.generic_type, $.path_type, $.constructor_identifier),
+            choice(
+              alias($.type_identifier, $.constructor_identifier),
+              alias($.path_type, $.scoped_type_identifier),
+              $.generic_type_identifier,
+            ),
           ),
           field("body", $.field_initializer_list),
         ),
       ),
-
+    generic_type_identifier: ($) =>
+      seq(
+        field("name", choice($.type_identifier, $.path_type)),
+        field("arguments", $.type_arguments),
+      ),
     field_initializer_list: ($) =>
       seq(
         "{",
-        commaSep(choice($.record_update_base, $.field_initializer)),
+        commaSep(
+          choice($.base_field_initializer, $.field_initializer, $.shorthand_field_initializer),
+        ),
         "}",
       ),
     field_initializer: ($) =>
-      choice(
-        seq(field("name", $.identifier), ":", field("value", $._expression)),
-        field("name", $.identifier),
-      ),
-    record_update_base: ($) => seq("..", field("value", $._expression)),
+      seq(field("name", $.identifier), ":", field("value", $._expression)),
+    shorthand_field_initializer: ($) => $.identifier,
+    base_field_initializer: ($) => seq("..", field("value", $._expression)),
 
     map_literal: ($) => seq("{", commaSep($.map_entry), "}"),
     map_entry: ($) =>
       seq(field("key", $._expression), ":", field("value", $._expression)),
 
-    pattern: ($) =>
+    list_literal: ($) => seq("[", commaSep($._expression), "]"),
+    tuple_expression: ($) =>
+      seq("(", $._expression, ",", commaSep1($._expression), ")"),
+    unit_expression: (_) => seq("(", ")"),
+    parenthesized_expression: ($) => seq("(", $._expression, ")"),
+
+    // Patterns
+
+    _pattern: ($) => choice($.or_pattern, $._binding_pattern),
+    _binding_pattern: ($) =>
       choice(
-        $.call_pattern,
-        $.list_pattern,
+        $.constructor_pattern,
+        $.struct_pattern,
         $.tuple_pattern,
+        $.list_pattern,
+        $.unit_pattern,
+        $.path_pattern,
         $.wildcard_pattern,
-        $.constructor_identifier,
+        $.self,
         $.identifier,
+        alias($.type_identifier, $.constructor_identifier),
         $.string,
+        $.raw_string,
         $.number,
+        $.negative_number,
+        $.boolean,
       ),
 
-    call_pattern: ($) =>
+    or_pattern: ($) =>
+      prec.left(seq($._pattern, "|", $._pattern)),
+
+    path_pattern: ($) =>
       seq(
-        field("name", $.constructor_identifier),
-        field("arguments", $.pattern_list),
+        choice($.identifier, $.type_identifier),
+        repeat1(seq(".", choice($.identifier, $.type_identifier))),
       ),
 
-    pattern_list: ($) => seq("(", commaSep($.pattern), ")"),
-    tuple_pattern: ($) => seq("(", commaSep1($.pattern), ")"),
-    list_pattern: ($) =>
-      seq("[", commaSep(choice($.pattern, $.rest_pattern)), "]"),
-    rest_pattern: ($) => seq("..", $.identifier),
+    constructor_pattern: ($) =>
+      seq(
+        field(
+          "name",
+          choice(alias($.type_identifier, $.constructor_identifier), $.path_pattern),
+        ),
+        field("arguments", $.pattern_arguments),
+      ),
+    pattern_arguments: ($) => seq("(", commaSep($._pattern), ")"),
+
+    struct_pattern: ($) =>
+      seq(
+        optional(
+          field(
+            "name",
+            choice(alias($.type_identifier, $.constructor_identifier), $.path_pattern),
+          ),
+        ),
+        "{",
+        commaSep(choice($.field_pattern, $.rest_pattern)),
+        "}",
+      ),
+    field_pattern: ($) =>
+      seq(
+        field("name", $.identifier),
+        optional(seq(":", field("pattern", $._pattern))),
+      ),
+
+    tuple_pattern: ($) => seq("(", $._pattern, ",", commaSep1($._pattern), ")"),
+    unit_pattern: (_) => seq("(", ")"),
+    list_pattern: ($) => seq("[", commaSep(choice($._pattern, $.rest_pattern)), "]"),
+    rest_pattern: ($) => prec.right(seq("..", optional($._binding_pattern))),
     wildcard_pattern: (_) => "_",
 
-    path: ($) => prec.left(sep1($.identifier, ".")),
+    negative_number: ($) => seq("-", $.number),
+
+    // Literals
 
     boolean: (_) => choice("true", "false"),
+
     number: (_) =>
       token(
         choice(
-          /0x[0-9a-fA-F_]+[A-Za-z][A-Za-z0-9_]*/,
-          /0x[0-9a-fA-F_]+/,
-          /0b[01_]+[A-Za-z][A-Za-z0-9_]*/,
-          /0b[01_]+/,
-          /[0-9][0-9_]*[A-Za-z][A-Za-z0-9_]*/,
-          /[0-9][0-9_]*/,
+          /0x[0-9a-fA-F]+(_[0-9a-fA-F]+)*([iu](8|16|32|64|128|size))?/,
+          /[0-9]+(_[0-9]+)*(\.[0-9]+(_[0-9]+)*)?([eE][+-]?[0-9]+(_[0-9]+)*)?([iu](8|16|32|64|128|size)|f(32|64|128)|dec)?/,
         ),
       ),
-    string: (_) => token(seq('"', repeat(choice(/[^"\\]+/, /\\./)), '"')),
+
+    string: ($) =>
+      seq(
+        '"',
+        repeat(
+          choice(
+            $.string_content,
+            $.escape_sequence,
+            $.brace_escape,
+            $.interpolation,
+          ),
+        ),
+        token.immediate('"'),
+      ),
+    string_content: (_) => token.immediate(prec(1, /[^"\\{}]+/)),
+    escape_sequence: (_) => token.immediate(/\\./),
+    brace_escape: (_) => token.immediate(choice("{{", "}}")),
+    interpolation: ($) =>
+      seq(
+        token.immediate("{"),
+        field("value", $._expression),
+        optional(seq(":", optional(field("format", $.format_spec)))),
+        "}",
+      ),
+    format_spec: (_) => token.immediate(/[^}"]+/),
+
+    raw_string: (_) =>
+      token(
+        choice(
+          /r"[^"]*"/,
+          /r#"([^"]|"[^#])*"#/,
+          /r##"([^"]|"[^#]|"#[^#])*"##/,
+        ),
+      ),
 
     identifier: (_) => /[a-z_][A-Za-z0-9_]*/,
     type_identifier: (_) => /[A-Z][A-Za-z0-9_]*/,
-    constructor_identifier: (_) => /[A-Z][A-Za-z0-9_]*/,
   },
 });

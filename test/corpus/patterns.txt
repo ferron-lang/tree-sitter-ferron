@@ -1,0 +1,109 @@
+========
+Patterns
+========
+
+fn f() -> Unit {
+  let (a, (b, c)) = nested
+  let Point { x, .. } = q
+  match value {
+    Some(-1) | Some(1) => 1
+    shapes.Point { x, y } if x > 0 => 2
+    [head, ..tail] => 3
+    [_, .._] => 4
+    "Saturday" | "Sunday" => 5
+    r"\d+" => 6
+    () => 7
+    Some({ left, right }) => 8
+    true => 9
+  }
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters)
+    (type_identifier)
+    (block
+      (let_statement
+        (tuple_pattern
+          (identifier)
+          (tuple_pattern
+            (identifier)
+            (identifier)))
+        (identifier))
+      (let_statement
+        (struct_pattern
+          (constructor_identifier)
+          (field_pattern
+            (identifier))
+          (rest_pattern))
+        (identifier))
+      (expression_statement
+        (match_expression
+          (identifier)
+          (match_body
+            (match_arm
+              (or_pattern
+                (constructor_pattern
+                  (constructor_identifier)
+                  (pattern_arguments
+                    (negative_number
+                      (number))))
+                (constructor_pattern
+                  (constructor_identifier)
+                  (pattern_arguments
+                    (number))))
+              (number))
+            (match_arm
+              (struct_pattern
+                (path_pattern
+                  (identifier)
+                  (type_identifier))
+                (field_pattern
+                  (identifier))
+                (field_pattern
+                  (identifier)))
+              (binary_expression
+                (identifier)
+                (number))
+              (number))
+            (match_arm
+              (list_pattern
+                (identifier)
+                (rest_pattern
+                  (identifier)))
+              (number))
+            (match_arm
+              (list_pattern
+                (wildcard_pattern)
+                (rest_pattern
+                  (wildcard_pattern)))
+              (number))
+            (match_arm
+              (or_pattern
+                (string
+                  (string_content))
+                (string
+                  (string_content)))
+              (number))
+            (match_arm
+              (raw_string)
+              (number))
+            (match_arm
+              (unit_pattern)
+              (number))
+            (match_arm
+              (constructor_pattern
+                (constructor_identifier)
+                (pattern_arguments
+                  (struct_pattern
+                    (field_pattern
+                      (identifier))
+                    (field_pattern
+                      (identifier)))))
+              (number))
+            (match_arm
+              (boolean)
+              (number))))))))
