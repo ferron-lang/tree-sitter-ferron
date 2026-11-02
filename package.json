@@ -15,6 +15,7 @@
   "scripts": {
     "generate": "tree-sitter generate",
     "test": "XDG_CACHE_HOME=/tmp/tree-sitter-cache tree-sitter test --config-path .tree-sitter-config.json",
+    "test:statement-ends": "node script/check-statement-ends.mjs",
     "parse:examples": "XDG_CACHE_HOME=/tmp/tree-sitter-cache tree-sitter parse --config-path .tree-sitter-config.json ../ferron/examples/simple/src/main.fer ../ferron/examples/logstats/src/main.fer"
   },
   "tree-sitter": [
