@@ -111,7 +111,7 @@ static bool continues_line(TSLexer *lexer, bool item) {
     case DECIDE_ON_LOOKAHEAD: break;
   }
   switch (lexer->lookahead) {
-    // Lone `-`, `!`, `~`, `|` start an expression; `->`, `-=`, `!=`, `|>`,
+    // Lone `-`, `!`, `~`, `|` start an expression; `->`, `-=`, `!=`,
     // `||`, `|=` only continue one. Between items a `|` starts the next variant.
     case '-':
       lexer->advance(lexer, false);
@@ -123,7 +123,7 @@ static bool continues_line(TSLexer *lexer, bool item) {
       return false;
     case '|':
       lexer->advance(lexer, false);
-      return item || lexer->lookahead == '>' || lexer->lookahead == '|' || lexer->lookahead == '=';
+      return item || lexer->lookahead == '|' || lexer->lookahead == '=';
     case '{':
       return item;
     case '+': case '*': case '%': case '=': case '?': case '<': case '>': case '&': case '^':

@@ -62,7 +62,7 @@ Leading continuation lines
 fn f() -> Unit {
   let text = items
     .map(|x| x + 1)
-    |> join(",")
+    .join(",")
   let sum = a
     + b
   // a comment between statements
@@ -79,22 +79,22 @@ fn f() -> Unit {
     (block
       (let_statement
         (identifier)
-        (binary_expression
-          (call_expression
-            (member_expression
-              (identifier)
-              (identifier))
-            (arguments
-              (lambda_expression
+        (call_expression
+          (member_expression
+            (call_expression
+              (member_expression
                 (identifier)
-                (binary_expression
+                (identifier))
+              (arguments
+                (lambda_expression
                   (identifier)
-                  (number)))))
-          (call_expression
-            (identifier)
-            (arguments
-              (string
-                (string_content))))))
+                  (binary_expression
+                    (identifier)
+                    (number)))))
+            (identifier))
+          (arguments
+            (string
+              (string_content)))))
       (let_statement
         (identifier)
         (binary_expression

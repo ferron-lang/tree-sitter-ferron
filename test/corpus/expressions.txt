@@ -3,7 +3,7 @@ Operator precedence
 ===================
 
 fn f() -> Unit {
-  let a = x |> f() || y && z == 1 + 2 * 3
+  let a = f() || y && z == 1 + 2 * 3
   let b = a & b == c
   let c = -x >> 4 | ~big ^ 1 &+ 2 &* 3
   let d = 5 not in xs
@@ -23,20 +23,18 @@ fn f() -> Unit {
       (let_statement
         (identifier)
         (binary_expression
-          (identifier)
+          (call_expression
+            (identifier)
+            (arguments))
           (binary_expression
-            (call_expression
-              (identifier)
-              (arguments))
+            (identifier)
             (binary_expression
               (identifier)
               (binary_expression
-                (identifier)
+                (number)
                 (binary_expression
                   (number)
-                  (binary_expression
-                    (number)
-                    (number))))))))
+                  (number)))))))
       (let_statement
         (identifier)
         (binary_expression

@@ -9,7 +9,6 @@
 // Mirrors the compiler's Pratt binding powers (`ast/expr/parser.rs`).
 const PREC = {
   assign: -1,
-  pipe: 1,
   or: 2,
   and: 3,
   compare: 4,
@@ -581,7 +580,6 @@ export default grammar({
     binary_expression: ($) =>
       choice(
         ...[
-          ["|>", PREC.pipe],
           ["||", PREC.or],
           ["or", PREC.or],
           ["&&", PREC.and],
