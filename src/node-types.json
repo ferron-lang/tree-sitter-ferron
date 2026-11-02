@@ -366,6 +366,18 @@
             "named": false
           },
           {
+            "type": "&*=",
+            "named": false
+          },
+          {
+            "type": "&+=",
+            "named": false
+          },
+          {
+            "type": "&-=",
+            "named": false
+          },
+          {
             "type": "&=",
             "named": false
           },
@@ -1997,6 +2009,76 @@
     }
   },
   {
+    "type": "newtype_declaration",
+    "named": true,
+    "fields": {
+      "base": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "_type",
+            "named": true
+          }
+        ]
+      },
+      "base_visibility": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "visibility",
+            "named": true
+          }
+        ]
+      },
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "type_identifier",
+            "named": true
+          }
+        ]
+      },
+      "predicate": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "_expression",
+            "named": true
+          }
+        ]
+      },
+      "type_parameters": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "type_parameters",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "attribute",
+          "named": true
+        },
+        {
+          "type": "visibility",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "on_handler",
     "named": true,
     "fields": {
@@ -2411,6 +2493,10 @@
         },
         {
           "type": "impl_declaration",
+          "named": true
+        },
+        {
+          "type": "newtype_declaration",
           "named": true
         },
         {
@@ -3320,11 +3406,23 @@
     "named": false
   },
   {
+    "type": "&*=",
+    "named": false
+  },
+  {
     "type": "&+",
     "named": false
   },
   {
+    "type": "&+=",
+    "named": false
+  },
+  {
     "type": "&-",
+    "named": false
+  },
+  {
+    "type": "&-=",
     "named": false
   },
   {
@@ -3575,6 +3673,10 @@
   },
   {
     "type": "move",
+    "named": false
+  },
+  {
+    "type": "newtype",
     "named": false
   },
   {

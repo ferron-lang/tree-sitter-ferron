@@ -7,9 +7,6 @@
 (escape_sequence) @string.escape
 (brace_escape) @string.escape
 (format_spec) @string.special
-(interpolation
-  "{" @punctuation.special
-  "}" @punctuation.special)
 
 (number) @number
 (boolean) @constant.builtin
@@ -25,6 +22,7 @@
   "receives"
   "resource"
   "struct"
+  "newtype"
   "trait"
   "type"
   "use"
@@ -118,3 +116,8 @@
 
 ["(" ")" "[" "]" "{" "}"] @punctuation.bracket
 ["," "." ":" ";"] @punctuation.delimiter
+
+; After the generic brackets: for one node the last matching pattern wins.
+(interpolation
+  "{" @punctuation.special
+  "}" @punctuation.special)

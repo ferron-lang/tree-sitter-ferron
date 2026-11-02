@@ -36,21 +36,25 @@ const ASSIGNMENT_OPERATORS = [
   "^=",
   "<<=",
   ">>=",
+  "&+=",
+  "&-=",
+  "&*=",
 ];
 
 const commaSep = (rule) => optional(commaSep1(rule));
 const commaSep1 = (rule) => seq(rule, repeat(seq(",", rule)), optional(","));
 const sep1 = (rule, separator) => seq(rule, repeat(seq(separator, rule)));
 // Newline- or `;`-separated members of a braced body.
-const lines = ($, rule) =>
-  optional(seq(sep1(rule, $._terminator), optional($._terminator)));
+// Members of a braced body separated by `terminator`.
+const lines = (rule, terminator) =>
+  optional(seq(sep1(rule, terminator), optional(terminator)));
 
 export default grammar({
   name: "ferron",
 
   word: ($) => $.identifier,
 
-  externals: ($) => [$._newline, $._error_sentinel],
+  externals: ($) => [$._newline, $._item_newline, $._error_sentinel],
 
   extras: ($) => [/[\s\uFEFF\u2060\u200B]/, $.line_comment, $.block_comment],
 
@@ -64,9 +68,12 @@ export default grammar({
   ],
 
   rules: {
-    source_file: ($) => lines($, $._item),
+    source_file: ($) => lines($._item, $._item_terminator),
 
+    // Statements end per the compiler's D28 rule; items and fields also let a
+    // header or variant list continue on lines starting with `{`, `|`, `where`.
     _terminator: ($) => choice($._newline, ";"),
+    _item_terminator: ($) => choice($._item_newline, ";"),
 
     line_comment: (_) => token(seq("//", /.*/)),
     block_comment: (_) => token(seq("/*", /([^*]|\*+[^*/])*\*+/, "/")),
@@ -77,6 +84,7 @@ export default grammar({
         $.const_declaration,
         $.struct_declaration,
         $.type_declaration,
+        $.newtype_declaration,
         $.trait_declaration,
         $.impl_declaration,
         $.resource_declaration,
@@ -164,8 +172,8 @@ export default grammar({
         "{",
         optional(
           seq(
-            sep1($.field_declaration, choice(",", $._terminator)),
-            optional(choice(",", $._terminator)),
+            sep1($.field_declaration, choice(",", $._item_terminator)),
+            optional(choice(",", $._item_terminator)),
           ),
         ),
         "}",
@@ -197,6 +205,20 @@ export default grammar({
           ),
         ),
       ),
+    // `newtype UserId = Int`, `pub newtype X = pub Base where value > 0`.
+    newtype_declaration: ($) =>
+      seq(
+        repeat($.attribute),
+        optional($.visibility),
+        "newtype",
+        field("name", $.type_identifier),
+        optional(field("type_parameters", $.type_parameters)),
+        "=",
+        optional(field("base_visibility", $.visibility)),
+        field("base", $._type),
+        optional(seq("where", field("predicate", $._expression))),
+      ),
+
     variant_list: ($) => prec.right(repeat1($.variant_declaration)),
     variant_declaration: ($) =>
       prec.right(
@@ -239,12 +261,12 @@ export default grammar({
       seq(
         "{",
         lines(
-          $,
           choice(
             $.associated_type_declaration,
             $.const_declaration,
             $.function_declaration,
           ),
+          $._item_terminator,
         ),
         "}",
       ),
@@ -278,7 +300,7 @@ export default grammar({
         field("body", $.actor_body),
       ),
     actor_body: ($) =>
-      seq("{", lines($, choice($.on_handler, $._statement)), "}"),
+      seq("{", lines(choice($.on_handler, $._statement), $._terminator), "}"),
     on_handler: ($) =>
       seq(
         "on",
@@ -378,7 +400,7 @@ export default grammar({
 
     // Statements
 
-    block: ($) => prec(1, seq("{", lines($, $._statement), "}")),
+    block: ($) => prec(1, seq("{", lines($._statement, $._terminator), "}")),
 
     _statement: ($) =>
       choice(
@@ -494,9 +516,10 @@ export default grammar({
 
     match_expression: ($) =>
       seq("match", field("value", $._expression), field("body", $.match_body)),
-    match_body: ($) => seq("{", lines($, $.match_arm), "}"),
+    match_body: ($) => seq("{", lines($.match_arm, $._terminator), "}"),
     match_arm: ($) =>
       seq(
+        optional("|"),
         field("pattern", $._pattern),
         optional(seq("if", field("guard", $._expression))),
         "=>",

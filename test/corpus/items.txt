@@ -402,3 +402,53 @@ const TWO: WorkerCount =
         (arguments
           (string
             (string_content)))))))
+
+=========================
+Newtypes and type aliases
+=========================
+
+newtype UserId = Int
+pub newtype Archive = pub File
+newtype NonEmpty[T] = List[T] where value.len() > 0
+type Pairs[T] = List[Tuple[T, T]]
+
+---
+
+(source_file
+  (newtype_declaration
+    (type_identifier)
+    (type_identifier))
+  (newtype_declaration
+    (visibility)
+    (type_identifier)
+    (visibility)
+    (type_identifier))
+  (newtype_declaration
+    (type_identifier)
+    (type_parameters
+      (type_parameter
+        (type_identifier)))
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (type_identifier)))
+    (binary_expression
+      (call_expression
+        (member_expression
+          (identifier)
+          (identifier))
+        (arguments))
+      (number)))
+  (type_declaration
+    (type_identifier)
+    (type_parameters
+      (type_parameter
+        (type_identifier)))
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)
+            (type_identifier)))))))
