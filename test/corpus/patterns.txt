@@ -144,3 +144,183 @@ fn f() -> Unit {
             (identifier)))
         (type_identifier)
         (identifier)))))
+
+==============================
+List rest patterns
+==============================
+
+fn f() -> Unit {
+  match xs {
+    [first, ..] => 1
+    [.., last] => 2
+    [a, .., z] => 3
+    [a, ..mid, z] => 4
+  }
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters)
+    (type_identifier)
+    (block
+      (expression_statement
+        (match_expression
+          (identifier)
+          (match_body
+            (match_arm
+              (list_pattern
+                (identifier)
+                (rest_pattern))
+              (number))
+            (match_arm
+              (list_pattern
+                (rest_pattern)
+                (identifier))
+              (number))
+            (match_arm
+              (list_pattern
+                (identifier)
+                (rest_pattern)
+                (identifier))
+              (number))
+            (match_arm
+              (list_pattern
+                (identifier)
+                (rest_pattern
+                  (identifier))
+                (identifier))
+              (number))))))))
+
+==============================
+At bindings and range patterns
+==============================
+
+fn f() -> Unit {
+  let q @ P { x, .. } = p
+  match n {
+    d @ 1..=9 => d
+    10..100 => 2
+    -5..=-1 => 3
+    all @ [_, _] => 4
+  }
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters)
+    (type_identifier)
+    (block
+      (let_statement
+        (at_pattern
+          (identifier)
+          (struct_pattern
+            (constructor_identifier)
+            (field_pattern
+              (identifier))
+            (rest_pattern)))
+        (identifier))
+      (expression_statement
+        (match_expression
+          (identifier)
+          (match_body
+            (match_arm
+              (at_pattern
+                (identifier)
+                (range_pattern
+                  (number)
+                  (number)))
+              (identifier))
+            (match_arm
+              (range_pattern
+                (number)
+                (number))
+              (number))
+            (match_arm
+              (range_pattern
+                (negative_number
+                  (number))
+                (negative_number
+                  (number)))
+              (number))
+            (match_arm
+              (at_pattern
+                (identifier)
+                (list_pattern
+                  (wildcard_pattern)
+                  (wildcard_pattern)))
+              (number))))))))
+
+==============================
+Parameter patterns
+==============================
+
+fn f(Rect { w, h }: Rect, take (a, _): Tuple[Int, Int], UserId(n): take UserId, p @ P { x, .. }: P, _: Int) -> Int {
+  return xs.map(|pt @ P { x, .. }| x)
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters
+      (parameter
+        (struct_pattern
+          (constructor_identifier)
+          (field_pattern
+            (identifier))
+          (field_pattern
+            (identifier)))
+        (type_identifier))
+      (parameter
+        (take)
+        (tuple_pattern
+          (identifier)
+          (wildcard_pattern))
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)
+            (type_identifier))))
+      (parameter
+        (constructor_pattern
+          (constructor_identifier)
+          (pattern_arguments
+            (identifier)))
+        (take)
+        (type_identifier))
+      (parameter
+        (at_pattern
+          (identifier)
+          (struct_pattern
+            (constructor_identifier)
+            (field_pattern
+              (identifier))
+            (rest_pattern)))
+        (type_identifier))
+      (parameter
+        (wildcard_pattern)
+        (type_identifier)))
+    (type_identifier)
+    (block
+      (return_statement
+        (call_expression
+          (member_expression
+            (identifier)
+            (identifier))
+          (arguments
+            (lambda_expression
+              (at_pattern
+                (identifier)
+                (struct_pattern
+                  (constructor_identifier)
+                  (field_pattern
+                    (identifier))
+                  (rest_pattern)))
+              (identifier))))))))

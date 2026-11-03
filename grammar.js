@@ -385,10 +385,20 @@ export default grammar({
     self_parameter: ($) => seq(optional($.take), $.self),
     parameter: ($) =>
       seq(
-        field("name", $.identifier),
+        optional($.take),
+        choice(field("name", $.identifier), field("pattern", $._parameter_pattern)),
         ":",
         optional($.take),
         field("type", $._type),
+      ),
+    // An irrefutable destructuring parameter (D50); a plain name is `name`.
+    _parameter_pattern: ($) =>
+      choice(
+        $.at_pattern,
+        $.constructor_pattern,
+        $.struct_pattern,
+        $.tuple_pattern,
+        $.wildcard_pattern,
       ),
     take: (_) => "take",
     self: (_) => "self",
@@ -792,6 +802,8 @@ export default grammar({
     _pattern: ($) => choice($.or_pattern, $._binding_pattern),
     _binding_pattern: ($) =>
       choice(
+        $.at_pattern,
+        $.range_pattern,
         $.constructor_pattern,
         $.struct_pattern,
         $.tuple_pattern,
@@ -851,6 +863,15 @@ export default grammar({
     list_pattern: ($) => seq("[", commaSep(choice($._pattern, $.rest_pattern)), "]"),
     rest_pattern: ($) => prec.right(seq("..", optional($._binding_pattern))),
     wildcard_pattern: (_) => "_",
+    at_pattern: ($) =>
+      seq(field("name", $.identifier), "@", field("pattern", $._binding_pattern)),
+    range_pattern: ($) =>
+      seq(
+        field("start", $._range_pattern_bound),
+        field("operator", choice("..", "..=")),
+        field("end", $._range_pattern_bound),
+      ),
+    _range_pattern_bound: ($) => choice($.number, $.negative_number),
 
     negative_number: ($) => seq("-", $.number),
 

@@ -106,6 +106,10 @@
     "named": true,
     "subtypes": [
       {
+        "type": "at_pattern",
+        "named": true
+      },
+      {
         "type": "boolean",
         "named": true
       },
@@ -139,6 +143,10 @@
       },
       {
         "type": "path_pattern",
+        "named": true
+      },
+      {
+        "type": "range_pattern",
         "named": true
       },
       {
@@ -477,6 +485,96 @@
         "types": [
           {
             "type": "_type",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "at_pattern",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "pattern": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "at_pattern",
+            "named": true
+          },
+          {
+            "type": "boolean",
+            "named": true
+          },
+          {
+            "type": "constructor_identifier",
+            "named": true
+          },
+          {
+            "type": "constructor_pattern",
+            "named": true
+          },
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "list_pattern",
+            "named": true
+          },
+          {
+            "type": "negative_number",
+            "named": true
+          },
+          {
+            "type": "number",
+            "named": true
+          },
+          {
+            "type": "path_pattern",
+            "named": true
+          },
+          {
+            "type": "range_pattern",
+            "named": true
+          },
+          {
+            "type": "raw_string",
+            "named": true
+          },
+          {
+            "type": "self",
+            "named": true
+          },
+          {
+            "type": "string",
+            "named": true
+          },
+          {
+            "type": "struct_pattern",
+            "named": true
+          },
+          {
+            "type": "tuple_pattern",
+            "named": true
+          },
+          {
+            "type": "unit_pattern",
+            "named": true
+          },
+          {
+            "type": "wildcard_pattern",
             "named": true
           }
         ]
@@ -1695,6 +1793,10 @@
       "required": false,
       "types": [
         {
+          "type": "at_pattern",
+          "named": true
+        },
+        {
           "type": "boolean",
           "named": true
         },
@@ -1724,6 +1826,10 @@
         },
         {
           "type": "path_pattern",
+          "named": true
+        },
+        {
+          "type": "range_pattern",
           "named": true
         },
         {
@@ -2245,10 +2351,36 @@
     "fields": {
       "name": {
         "multiple": false,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "pattern": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "at_pattern",
+            "named": true
+          },
+          {
+            "type": "constructor_pattern",
+            "named": true
+          },
+          {
+            "type": "struct_pattern",
+            "named": true
+          },
+          {
+            "type": "tuple_pattern",
+            "named": true
+          },
+          {
+            "type": "wildcard_pattern",
             "named": true
           }
         ]
@@ -2265,7 +2397,7 @@
       }
     },
     "children": {
-      "multiple": false,
+      "multiple": true,
       "required": false,
       "types": [
         {
@@ -2403,6 +2535,54 @@
     }
   },
   {
+    "type": "range_pattern",
+    "named": true,
+    "fields": {
+      "end": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "negative_number",
+            "named": true
+          },
+          {
+            "type": "number",
+            "named": true
+          }
+        ]
+      },
+      "operator": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "..",
+            "named": false
+          },
+          {
+            "type": "..=",
+            "named": false
+          }
+        ]
+      },
+      "start": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "negative_number",
+            "named": true
+          },
+          {
+            "type": "number",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "resource_declaration",
     "named": true,
     "fields": {
@@ -2441,6 +2621,10 @@
       "required": false,
       "types": [
         {
+          "type": "at_pattern",
+          "named": true
+        },
+        {
           "type": "boolean",
           "named": true
         },
@@ -2470,6 +2654,10 @@
         },
         {
           "type": "path_pattern",
+          "named": true
+        },
+        {
+          "type": "range_pattern",
           "named": true
         },
         {
@@ -3671,6 +3859,10 @@
   },
   {
     "type": "?",
+    "named": false
+  },
+  {
+    "type": "@",
     "named": false
   },
   {
