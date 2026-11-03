@@ -84,6 +84,8 @@ export default grammar({
         $.struct_declaration,
         $.type_declaration,
         $.newtype_declaration,
+        $.opaque_type_declaration,
+        $.extern_block,
         $.trait_declaration,
         $.impl_declaration,
         $.resource_declaration,
@@ -107,8 +109,13 @@ export default grammar({
         commaSep(choice($.attribute_named_argument, $._attribute_value)),
         ")",
       ),
+    // `rename: "term"`, `close = LLVMContextDispose`.
     attribute_named_argument: ($) =>
-      seq(field("name", $.identifier), ":", field("value", $._attribute_value)),
+      seq(
+        field("name", $.identifier),
+        choice(":", "="),
+        field("value", $._attribute_value),
+      ),
     _attribute_value: ($) =>
       choice(
         $.identifier,
@@ -218,6 +225,15 @@ export default grammar({
         field("base", $._type),
         optional(seq("where", field("predicate", $._expression))),
       ),
+    // `opaque type LLVMOpaqueContext`: a C type known only by address.
+    opaque_type_declaration: ($) =>
+      seq(
+        repeat($.attribute),
+        optional($.visibility),
+        "opaque",
+        "type",
+        field("name", $.type_identifier),
+      ),
 
     variant_list: ($) =>
       prec.right(
@@ -226,10 +242,13 @@ export default grammar({
           repeat1($.variant_declaration),
         ),
       ),
+    // `| IntEQ = 32`: a payload-less variant may carry an explicit value.
     _bare_variant_declaration: ($) =>
       seq(
         field("name", $.type_identifier),
-        optional(field("fields", $.variant_field_list)),
+        optional(
+          choice(field("fields", $.variant_field_list), $._variant_value),
+        ),
       ),
     variant_declaration: ($) =>
       prec.right(
@@ -237,10 +256,14 @@ export default grammar({
           repeat($.attribute),
           "|",
           field("name", $.type_identifier),
-          optional(field("fields", $.variant_field_list)),
+          optional(
+            choice(field("fields", $.variant_field_list), $._variant_value),
+          ),
         ),
       ),
     variant_field_list: ($) => seq("(", commaSep($.field_declaration), ")"),
+    _variant_value: ($) =>
+      seq("=", field("value", choice($.number, $.negative_number))),
 
     trait_declaration: ($) =>
       seq(
@@ -337,6 +360,25 @@ export default grammar({
         ),
       ),
     static: (_) => "static",
+
+    // `extern "C" { pub fn f(x: i32) -> i32 }`: C signatures, no bodies;
+    // C names may start upper-case (`LLVMContextCreate`).
+    extern_block: ($) =>
+      seq(
+        "extern",
+        field("abi", $.string),
+        "{",
+        lines($.extern_function, $._item_terminator),
+        "}",
+      ),
+    extern_function: ($) =>
+      seq(
+        optional($.visibility),
+        "fn",
+        field("name", choice($.identifier, $.type_identifier)),
+        field("parameters", $.parameters),
+        optional(seq("->", field("return_type", $._type))),
+      ),
 
     parameters: ($) =>
       seq("(", commaSep(choice($.self_parameter, $.parameter)), ")"),

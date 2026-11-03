@@ -1041,6 +1041,82 @@
     }
   },
   {
+    "type": "extern_block",
+    "named": true,
+    "fields": {
+      "abi": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "string",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "extern_function",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "extern_function",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "type_identifier",
+            "named": true
+          }
+        ]
+      },
+      "parameters": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "parameters",
+            "named": true
+          }
+        ]
+      },
+      "return_type": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "_type",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "visibility",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "field_declaration",
     "named": true,
     "fields": {
@@ -2119,6 +2195,36 @@
     }
   },
   {
+    "type": "opaque_type_declaration",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "type_identifier",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "attribute",
+          "named": true
+        },
+        {
+          "type": "visibility",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "or_pattern",
     "named": true,
     "fields": {},
@@ -2484,6 +2590,10 @@
           "named": true
         },
         {
+          "type": "extern_block",
+          "named": true
+        },
+        {
           "type": "function_declaration",
           "named": true
         },
@@ -2493,6 +2603,10 @@
         },
         {
           "type": "newtype_declaration",
+          "named": true
+        },
+        {
+          "type": "opaque_type_declaration",
           "named": true
         },
         {
@@ -3169,6 +3283,20 @@
             "named": true
           }
         ]
+      },
+      "value": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "negative_number",
+            "named": true
+          },
+          {
+            "type": "number",
+            "named": true
+          }
+        ]
       }
     },
     "children": {
@@ -3623,6 +3751,10 @@
     "named": true
   },
   {
+    "type": "extern",
+    "named": false
+  },
+  {
     "type": "false",
     "named": false
   },
@@ -3685,6 +3817,10 @@
   },
   {
     "type": "on",
+    "named": false
+  },
+  {
+    "type": "opaque",
     "named": false
   },
   {

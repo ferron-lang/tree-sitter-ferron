@@ -23,6 +23,8 @@
   "resource"
   "struct"
   "newtype"
+  "opaque"
+  "extern"
   "trait"
   "type"
   "use"
@@ -68,6 +70,8 @@
 
 (function_declaration
   name: (identifier) @function)
+(extern_function
+  name: (_) @function)
 
 (call_expression
   function: (identifier) @function.call)

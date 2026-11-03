@@ -480,3 +480,163 @@ type Pairs[T] = List[Tuple[T, T]]
           (type_arguments
             (type_identifier)
             (type_identifier)))))))
+
+============
+Opaque types
+============
+
+opaque type LLVMOpaqueContext
+pub opaque type Other
+pub type LLVMContextRef = Ptr[LLVMOpaqueContext]
+
+---
+
+(source_file
+  (opaque_type_declaration
+    (type_identifier))
+  (opaque_type_declaration
+    (visibility)
+    (type_identifier))
+  (type_declaration
+    (visibility)
+    (type_identifier)
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (type_identifier)))))
+
+=================================
+ADT variants with explicit values
+=================================
+
+#[c_enum(i32)]
+pub type LLVMIntPredicate =
+  | IntEQ = 32
+  | IntNE = -33
+type Mixed = A = 0 | B(x: Int) | C = -1
+
+---
+
+(source_file
+  (type_declaration
+    (attribute
+      (identifier)
+      (attribute_arguments
+        (identifier)))
+    (visibility)
+    (type_identifier)
+    (variant_list
+      (variant_declaration
+        (type_identifier)
+        (number))
+      (variant_declaration
+        (type_identifier)
+        (negative_number
+          (number)))))
+  (type_declaration
+    (type_identifier)
+    (variant_list
+      (variant_declaration
+        (type_identifier)
+        (number))
+      (variant_declaration
+        (type_identifier)
+        (variant_field_list
+          (field_declaration
+            (identifier)
+            (type_identifier))))
+      (variant_declaration
+        (type_identifier)
+        (negative_number
+          (number))))))
+
+============
+Extern block
+============
+
+extern "C" {
+  pub fn LLVMContextCreate() -> LLVMContextRef
+  fn helper(name: CStr, count: u32) -> Unit
+  fn nothing()
+}
+extern "C" {}
+
+---
+
+(source_file
+  (extern_block
+    (string
+      (string_content))
+    (extern_function
+      (visibility)
+      (type_identifier)
+      (parameters)
+      (type_identifier))
+    (extern_function
+      (identifier)
+      (parameters
+        (parameter
+          (identifier)
+          (type_identifier))
+        (parameter
+          (identifier)
+          (primitive_type)))
+      (type_identifier))
+    (extern_function
+      (identifier)
+      (parameters)))
+  (extern_block
+    (string
+      (string_content))))
+
+=====================================
+Foreign resource with named attribute
+=====================================
+
+#[foreign_resource(close = LLVMContextDispose)]
+pub struct Context { ptr: LLVMContextRef }
+
+---
+
+(source_file
+  (struct_declaration
+    (attribute
+      (identifier)
+      (attribute_arguments
+        (attribute_named_argument
+          (identifier)
+          (type_identifier))))
+    (visibility)
+    (type_identifier)
+    (field_declaration_list
+      (field_declaration
+        (identifier)
+        (type_identifier)))))
+
+==============================================
+Extern and opaque as identifiers outside items
+==============================================
+
+fn extern(opaque: Int) -> Int {
+  let extern = opaque + 1
+  extern
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (type_identifier)
+    (block
+      (let_statement
+        (identifier)
+        (binary_expression
+          (identifier)
+          (number)))
+      (expression_statement
+        (identifier)))))
