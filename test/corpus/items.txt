@@ -131,6 +131,34 @@ type Small = | A | B
       (variant_declaration
         (type_identifier)))))
 
+===================================
+ADT whose first variant has no bar
+===================================
+
+type Pair[T] = Left(value: T) | Right(value: T)
+
+---
+
+(source_file
+  (type_declaration
+    (type_identifier)
+    (type_parameters
+      (type_parameter
+        (type_identifier)))
+    (variant_list
+      (variant_declaration
+        (type_identifier)
+        (variant_field_list
+          (field_declaration
+            (identifier)
+            (type_identifier))))
+      (variant_declaration
+        (type_identifier)
+        (variant_field_list
+          (field_declaration
+            (identifier)
+            (type_identifier)))))))
+
 ===============
 Refinement type
 ===============

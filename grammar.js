@@ -186,7 +186,8 @@ export default grammar({
         field("type", $._type),
       ),
 
-    // ADTs (`= | A(x: T) | B`) and refinements (`= Int where value > 0`).
+    // ADTs (`= | A(x: T) | B`, or `= A(x: T) | B` with the first `|` left
+    // out) and refinements (`= Int where value > 0`).
     type_declaration: ($) =>
       seq(
         repeat($.attribute),
@@ -218,7 +219,18 @@ export default grammar({
         optional(seq("where", field("predicate", $._expression))),
       ),
 
-    variant_list: ($) => prec.right(repeat1($.variant_declaration)),
+    variant_list: ($) =>
+      prec.right(
+        seq(
+          optional(alias($._bare_variant_declaration, $.variant_declaration)),
+          repeat1($.variant_declaration),
+        ),
+      ),
+    _bare_variant_declaration: ($) =>
+      seq(
+        field("name", $.type_identifier),
+        optional(field("fields", $.variant_field_list)),
+      ),
     variant_declaration: ($) =>
       prec.right(
         seq(
