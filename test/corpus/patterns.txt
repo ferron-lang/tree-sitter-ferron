@@ -107,3 +107,40 @@ fn f() -> Unit {
             (match_arm
               (boolean)
               (number))))))))
+
+==============================
+Annotated destructuring let
+==============================
+
+fn f() -> Unit {
+  let (a, b): Tuple[Int, Int] = pair
+  let Point { x, y }: Point = p
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters)
+    (type_identifier)
+    (block
+      (let_statement
+        (tuple_pattern
+          (identifier)
+          (identifier))
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)
+            (type_identifier)))
+        (identifier))
+      (let_statement
+        (struct_pattern
+          (constructor_identifier)
+          (field_pattern
+            (identifier))
+          (field_pattern
+            (identifier)))
+        (type_identifier)
+        (identifier)))))
