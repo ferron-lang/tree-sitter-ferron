@@ -93,7 +93,8 @@ export default grammar({
         $.function_declaration,
       ),
 
-    visibility: (_) => "pub",
+    // `pub(pkg)` (D59) is one token, as in the compiler's lexer.
+    visibility: (_) => choice("pub", "pub(pkg)"),
 
     attribute: ($) =>
       seq(

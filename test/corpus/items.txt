@@ -640,3 +640,58 @@ fn extern(opaque: Int) -> Int {
           (number)))
       (expression_statement
         (identifier)))))
+
+================
+Package visibility
+================
+
+pub(pkg) use pkg.shapes.twice
+pub(pkg) struct Cell {
+  pub(pkg) value: Int
+}
+impl Cell {
+  pub(pkg) fn peek(self) -> Int {
+    return self.value
+  }
+}
+pub(pkg) fn helper() -> Int {
+  return 1
+}
+
+---
+
+(source_file
+  (use_declaration
+    (visibility)
+    (use_path))
+  (struct_declaration
+    (visibility)
+    (type_identifier)
+    (field_declaration_list
+      (field_declaration
+        (visibility)
+        (identifier)
+        (type_identifier))))
+  (impl_declaration
+    (type_identifier)
+    (declaration_list
+      (function_declaration
+        (visibility)
+        (identifier)
+        (parameters
+          (self_parameter
+            (self)))
+        (type_identifier)
+        (block
+          (return_statement
+            (member_expression
+              (self)
+              (identifier)))))))
+  (function_declaration
+    (visibility)
+    (identifier)
+    (parameters)
+    (type_identifier)
+    (block
+      (return_statement
+        (number)))))

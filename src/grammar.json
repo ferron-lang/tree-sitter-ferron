@@ -169,8 +169,17 @@
       ]
     },
     "visibility": {
-      "type": "STRING",
-      "value": "pub"
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "pub"
+        },
+        {
+          "type": "STRING",
+          "value": "pub(pkg)"
+        }
+      ]
     },
     "attribute": {
       "type": "SEQ",
