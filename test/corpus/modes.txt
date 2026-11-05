@@ -271,6 +271,7 @@ fn f() -> Unit {
   let Point { var x, y } = pt
   let [var head, ..var rest] = xs
   for (var k, v) in entries { k = v }
+  for var w in xs { w = 4 }
   let h = |var a, b| a
 }
 
@@ -358,6 +359,14 @@ fn f() -> Unit {
           (assignment_statement
             (identifier)
             (identifier))))
+      (for_statement
+        (var_pattern
+          (identifier))
+        (identifier)
+        (block
+          (assignment_statement
+            (identifier)
+            (number))))
       (let_statement
         (identifier)
         (lambda_expression
