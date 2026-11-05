@@ -383,13 +383,16 @@ export default grammar({
 
     parameters: ($) =>
       seq("(", commaSep(choice($.self_parameter, $.parameter)), ")"),
-    self_parameter: ($) => seq(optional($.take), $.self),
+    self_parameter: ($) => seq(optional($._mode), $.self),
     parameter: ($) =>
       seq(
         optional($.take),
-        choice(field("name", $.identifier), field("pattern", $._parameter_pattern)),
+        choice(
+          field("name", choice($.identifier, $._mode_identifier)),
+          field("pattern", $._parameter_pattern),
+        ),
         ":",
-        optional($.take),
+        optional($._mode),
         field("type", $._type),
       ),
     // An irrefutable destructuring parameter (D50); a plain name is `name`.
@@ -401,6 +404,10 @@ export default grammar({
         $.tuple_pattern,
         $.wildcard_pattern,
       ),
+    // `mut` and `take` are contextual (D68): elsewhere they are names.
+    _mode: ($) => choice($.mut, $.take),
+    _mode_identifier: ($) => alias(choice("mut", "take"), $.identifier),
+    mut: (_) => "mut",
     take: (_) => "take",
     self: (_) => "self",
 
@@ -460,7 +467,9 @@ export default grammar({
     callable_type: ($) =>
       seq(choice("dyn", "impl"), field("type", choice($.generic_type, $.type_identifier))),
 
-    tuple_type: ($) => seq("(", commaSep($._type), ")"),
+    // Modes appear in function types: `Callable[(mut Rng, Int), T]`.
+    tuple_type: ($) => seq("(", commaSep(choice($._type, $.moded_type)), ")"),
+    moded_type: ($) => seq($._mode, field("type", $._type)),
 
     // Statements
 
@@ -575,6 +584,9 @@ export default grammar({
         $.boolean,
         $.self,
         $.identifier,
+        // `move`/`mut` prefix an operand only before a name or `self`; as
+        // in the compiler, `mut(a)`, `move - 1`, `f(mut)` use the name.
+        prec(PREC.postfix + 1, alias(choice("move", "mut"), $.identifier)),
         alias($.type_identifier, $.constructor_identifier),
       ),
 
@@ -636,7 +648,7 @@ export default grammar({
         commaSep(
           seq(
             field("name", $.identifier),
-            optional(seq(":", field("type", $._type))),
+            optional(seq(":", optional($._mode), field("type", $._type))),
           ),
         ),
         ")",
@@ -705,7 +717,7 @@ export default grammar({
       prec(
         PREC.unary,
         seq(
-          field("operator", choice("-", "!", "~", "move", "comptime")),
+          field("operator", choice("-", "!", "~", "move", "mut", "comptime")),
           field("argument", $._expression),
         ),
       ),
@@ -812,6 +824,7 @@ export default grammar({
         $.unit_pattern,
         $.path_pattern,
         $.wildcard_pattern,
+        $.var_pattern,
         $.self,
         $.identifier,
         alias($.type_identifier, $.constructor_identifier),
@@ -853,11 +866,17 @@ export default grammar({
         commaSep(choice($.field_pattern, $.rest_pattern)),
         "}",
       ),
+    // `{ x }`, `{ x: p }`, or the mutable shorthand `{ var x }`.
     field_pattern: ($) =>
-      seq(
-        field("name", $.identifier),
-        optional(seq(":", field("pattern", $._pattern))),
+      choice(
+        seq(
+          field("name", $.identifier),
+          optional(seq(":", field("pattern", $._pattern))),
+        ),
+        field("pattern", $.var_pattern),
       ),
+    // `Some(var p)` binds a mutable copy (D68).
+    var_pattern: ($) => seq("var", field("name", $.identifier)),
 
     tuple_pattern: ($) => seq("(", $._pattern, ",", commaSep1($._pattern), ")"),
     unit_pattern: (_) => seq("(", ")"),

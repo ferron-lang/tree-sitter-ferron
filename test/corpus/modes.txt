@@ -1,0 +1,630 @@
+==========================
+Mut and take parameter modes
+==========================
+
+fn grow(xs: mut List[Int], f: take File, take (a, _): Tuple[Int, Int]) -> Unit {}
+
+impl Counter {
+  fn bump(mut self) -> Unit {}
+  fn close(take self) -> Unit {}
+  fn get(self) -> Int { self.n }
+}
+
+actor Worker(rng: mut Rng, log: take File) {}
+
+fn h() -> Unit {
+  let g = fn(x: mut Rng, y: take File, z: Int) -> Int { 1 }
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (mut)
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier))))
+      (parameter
+        (identifier)
+        (take)
+        (type_identifier))
+      (parameter
+        (take)
+        (tuple_pattern
+          (identifier)
+          (wildcard_pattern))
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)
+            (type_identifier)))))
+    (type_identifier)
+    (block))
+  (impl_declaration
+    (type_identifier)
+    (declaration_list
+      (function_declaration
+        (identifier)
+        (parameters
+          (self_parameter
+            (mut)
+            (self)))
+        (type_identifier)
+        (block))
+      (function_declaration
+        (identifier)
+        (parameters
+          (self_parameter
+            (take)
+            (self)))
+        (type_identifier)
+        (block))
+      (function_declaration
+        (identifier)
+        (parameters
+          (self_parameter
+            (self)))
+        (type_identifier)
+        (block
+          (expression_statement
+            (member_expression
+              (self)
+              (identifier)))))))
+  (actor_declaration
+    (type_identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (mut)
+        (type_identifier))
+      (parameter
+        (identifier)
+        (take)
+        (type_identifier)))
+    (actor_body))
+  (function_declaration
+    (identifier)
+    (parameters)
+    (type_identifier)
+    (block
+      (let_statement
+        (identifier)
+        (function_expression
+          (closure_parameters
+            (identifier)
+            (mut)
+            (type_identifier)
+            (identifier)
+            (take)
+            (type_identifier)
+            (identifier)
+            (type_identifier))
+          (type_identifier)
+          (block
+            (expression_statement
+              (number))))))))
+
+==========================
+Mut places at call sites
+==========================
+
+fn f() -> Unit {
+  grow(mut xs, 3)
+  f(mut self.items)
+  f(mut xs[i])
+  swap(mut a.b, mut c)
+  let g = move file
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters)
+    (type_identifier)
+    (block
+      (expression_statement
+        (call_expression
+          (identifier)
+          (arguments
+            (unary_expression
+              (identifier))
+            (number))))
+      (expression_statement
+        (call_expression
+          (identifier)
+          (arguments
+            (unary_expression
+              (member_expression
+                (self)
+                (identifier))))))
+      (expression_statement
+        (call_expression
+          (identifier)
+          (arguments
+            (unary_expression
+              (index_expression
+                (identifier)
+                (identifier))))))
+      (expression_statement
+        (call_expression
+          (identifier)
+          (arguments
+            (unary_expression
+              (member_expression
+                (identifier)
+                (identifier)))
+            (unary_expression
+              (identifier)))))
+      (let_statement
+        (identifier)
+        (unary_expression
+          (identifier))))))
+
+==========================
+For, match, and if let over mut places
+==========================
+
+fn f() -> Unit {
+  for x in mut xs { x.y = 1 }
+  for x in move xs { use(x) }
+  match mut place {
+    Some(p) => p.x = 1
+    None => ()
+  }
+  match move s {
+    _ => ()
+  }
+  if let Some(p) = mut self.head { p.x = 1 }
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters)
+    (type_identifier)
+    (block
+      (for_statement
+        (identifier)
+        (unary_expression
+          (identifier))
+        (block
+          (assignment_statement
+            (member_expression
+              (identifier)
+              (identifier))
+            (number))))
+      (for_statement
+        (identifier)
+        (unary_expression
+          (identifier))
+        (block
+          (expression_statement
+            (call_expression
+              (identifier)
+              (arguments
+                (identifier))))))
+      (expression_statement
+        (match_expression
+          (unary_expression
+            (identifier))
+          (match_body
+            (match_arm
+              (constructor_pattern
+                (constructor_identifier)
+                (pattern_arguments
+                  (identifier)))
+              (assignment_statement
+                (member_expression
+                  (identifier)
+                  (identifier))
+                (number)))
+            (match_arm
+              (constructor_identifier)
+              (unit_expression)))))
+      (expression_statement
+        (match_expression
+          (unary_expression
+            (identifier))
+          (match_body
+            (match_arm
+              (wildcard_pattern)
+              (unit_expression)))))
+      (expression_statement
+        (if_expression
+          (let_condition
+            (constructor_pattern
+              (constructor_identifier)
+              (pattern_arguments
+                (identifier)))
+            (unary_expression
+              (member_expression
+                (self)
+                (identifier))))
+          (block
+            (assignment_statement
+              (member_expression
+                (identifier)
+                (identifier))
+              (number))))))))
+
+==========================
+Var pattern bindings
+==========================
+
+fn f() -> Unit {
+  match x {
+    Some(var p) => p.x = 1
+    Pair(var a, b) | Pair(b, var a) => ()
+    _ => ()
+  }
+  let (var l, r) = pair
+  let Point { x: var x, y } = pt
+  let Point { var x, y } = pt
+  let [var head, ..var rest] = xs
+  for (var k, v) in entries { k = v }
+  let h = |var a, b| a
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters)
+    (type_identifier)
+    (block
+      (expression_statement
+        (match_expression
+          (identifier)
+          (match_body
+            (match_arm
+              (constructor_pattern
+                (constructor_identifier)
+                (pattern_arguments
+                  (var_pattern
+                    (identifier))))
+              (assignment_statement
+                (member_expression
+                  (identifier)
+                  (identifier))
+                (number)))
+            (match_arm
+              (or_pattern
+                (constructor_pattern
+                  (constructor_identifier)
+                  (pattern_arguments
+                    (var_pattern
+                      (identifier))
+                    (identifier)))
+                (constructor_pattern
+                  (constructor_identifier)
+                  (pattern_arguments
+                    (identifier)
+                    (var_pattern
+                      (identifier)))))
+              (unit_expression))
+            (match_arm
+              (wildcard_pattern)
+              (unit_expression)))))
+      (let_statement
+        (tuple_pattern
+          (var_pattern
+            (identifier))
+          (identifier))
+        (identifier))
+      (let_statement
+        (struct_pattern
+          (constructor_identifier)
+          (field_pattern
+            (identifier)
+            (var_pattern
+              (identifier)))
+          (field_pattern
+            (identifier)))
+        (identifier))
+      (let_statement
+        (struct_pattern
+          (constructor_identifier)
+          (field_pattern
+            (var_pattern
+              (identifier)))
+          (field_pattern
+            (identifier)))
+        (identifier))
+      (let_statement
+        (list_pattern
+          (var_pattern
+            (identifier))
+          (rest_pattern
+            (var_pattern
+              (identifier))))
+        (identifier))
+      (for_statement
+        (tuple_pattern
+          (var_pattern
+            (identifier))
+          (identifier))
+        (identifier)
+        (block
+          (assignment_statement
+            (identifier)
+            (identifier))))
+      (let_statement
+        (identifier)
+        (lambda_expression
+          (var_pattern
+            (identifier))
+          (identifier)
+          (identifier))))))
+
+==========================
+Modes in function types
+==========================
+
+fn run(
+  gen: Callable[(mut Rng, Int), T],
+  pick: impl Callable[(mut Rng), T],
+  sink: dyn Callable[(take File), Unit],
+  step: fn(mut T) -> U,
+  close: fn(take File) -> Unit,
+  plain: fn(Int, Int) -> Int,
+) -> Unit {}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (tuple_type
+              (moded_type
+                (mut)
+                (type_identifier))
+              (type_identifier))
+            (type_identifier))))
+      (parameter
+        (identifier)
+        (callable_type
+          (generic_type
+            (type_identifier)
+            (type_arguments
+              (tuple_type
+                (moded_type
+                  (mut)
+                  (type_identifier)))
+              (type_identifier)))))
+      (parameter
+        (identifier)
+        (callable_type
+          (generic_type
+            (type_identifier)
+            (type_arguments
+              (tuple_type
+                (moded_type
+                  (take)
+                  (type_identifier)))
+              (type_identifier)))))
+      (parameter
+        (identifier)
+        (function_type
+          (tuple_type
+            (moded_type
+              (mut)
+              (type_identifier)))
+          (type_identifier)))
+      (parameter
+        (identifier)
+        (function_type
+          (tuple_type
+            (moded_type
+              (take)
+              (type_identifier)))
+          (type_identifier)))
+      (parameter
+        (identifier)
+        (function_type
+          (tuple_type
+            (type_identifier)
+            (type_identifier))
+          (type_identifier))))
+    (type_identifier)
+    (block)))
+
+==========================
+Mut, take, and move as identifiers
+==========================
+
+fn f(mut: Int, take: Int, move: Int, x: mut Int) -> Int {
+  let mut = 3
+  let take = 4
+  var move = 5
+  mut = mut + take
+  move += 1
+  mut.len()
+  f(mut)
+  g(move, take)
+  mut(a)
+  let y = move - 1
+  let z = mut[0]
+  env.fs.move(a, b)
+  xs.take(n)
+  match x {
+    Some(mut) => mut
+    take => take
+  }
+  for mut in xs { use(mut) }
+  let h = fn(mut: Int) -> Int { mut }
+  let l = |mut, move| mut + move
+  let p = P { mut: 1, take }
+  let P { mut, take: move } = p
+  if mut { exit }
+  return mut
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier))
+      (parameter
+        (identifier)
+        (type_identifier))
+      (parameter
+        (identifier)
+        (type_identifier))
+      (parameter
+        (identifier)
+        (mut)
+        (type_identifier)))
+    (type_identifier)
+    (block
+      (let_statement
+        (identifier)
+        (number))
+      (let_statement
+        (identifier)
+        (number))
+      (var_statement
+        (identifier)
+        (number))
+      (assignment_statement
+        (identifier)
+        (binary_expression
+          (identifier)
+          (identifier)))
+      (assignment_statement
+        (identifier)
+        (number))
+      (expression_statement
+        (call_expression
+          (member_expression
+            (identifier)
+            (identifier))
+          (arguments)))
+      (expression_statement
+        (call_expression
+          (identifier)
+          (arguments
+            (identifier))))
+      (expression_statement
+        (call_expression
+          (identifier)
+          (arguments
+            (identifier)
+            (identifier))))
+      (expression_statement
+        (call_expression
+          (identifier)
+          (arguments
+            (identifier))))
+      (let_statement
+        (identifier)
+        (binary_expression
+          (identifier)
+          (number)))
+      (let_statement
+        (identifier)
+        (index_expression
+          (identifier)
+          (number)))
+      (expression_statement
+        (call_expression
+          (member_expression
+            (member_expression
+              (identifier)
+              (identifier))
+            (identifier))
+          (arguments
+            (identifier)
+            (identifier))))
+      (expression_statement
+        (call_expression
+          (member_expression
+            (identifier)
+            (identifier))
+          (arguments
+            (identifier))))
+      (expression_statement
+        (match_expression
+          (identifier)
+          (match_body
+            (match_arm
+              (constructor_pattern
+                (constructor_identifier)
+                (pattern_arguments
+                  (identifier)))
+              (identifier))
+            (match_arm
+              (identifier)
+              (identifier)))))
+      (for_statement
+        (identifier)
+        (identifier)
+        (block
+          (expression_statement
+            (call_expression
+              (identifier)
+              (arguments
+                (identifier))))))
+      (let_statement
+        (identifier)
+        (function_expression
+          (closure_parameters
+            (identifier)
+            (type_identifier))
+          (type_identifier)
+          (block
+            (expression_statement
+              (identifier)))))
+      (let_statement
+        (identifier)
+        (lambda_expression
+          (identifier)
+          (identifier)
+          (binary_expression
+            (identifier)
+            (identifier))))
+      (let_statement
+        (identifier)
+        (struct_literal
+          (constructor_identifier)
+          (field_initializer_list
+            (field_initializer
+              (identifier)
+              (number))
+            (shorthand_field_initializer
+              (identifier)))))
+      (let_statement
+        (struct_pattern
+          (constructor_identifier)
+          (field_pattern
+            (identifier))
+          (field_pattern
+            (identifier)
+            (identifier)))
+        (identifier))
+      (expression_statement
+        (if_expression
+          (identifier)
+          (block
+            (exit_statement))))
+      (return_statement
+        (identifier)))))

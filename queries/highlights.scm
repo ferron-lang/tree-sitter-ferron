@@ -42,6 +42,10 @@
   "or"
 ] @keyword
 
+; Not in the list above: a mode `(mut)` would match `"mut"` too.
+(unary_expression
+  operator: "mut" @keyword)
+
 [
   "if"
   "else"
@@ -58,6 +62,7 @@
   (visibility)
   (static)
   (take)
+  (mut)
 ] @keyword.modifier
 
 (self) @variable.builtin

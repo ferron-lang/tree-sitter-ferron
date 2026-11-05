@@ -174,6 +174,10 @@
         "named": true
       },
       {
+        "type": "var_pattern",
+        "named": true
+      },
+      {
         "type": "wildcard_pattern",
         "named": true
       }
@@ -571,6 +575,10 @@
           },
           {
             "type": "unit_pattern",
+            "named": true
+          },
+          {
+            "type": "var_pattern",
             "named": true
           },
           {
@@ -998,6 +1006,20 @@
           }
         ]
       }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "mut",
+          "named": true
+        },
+        {
+          "type": "take",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -1324,7 +1346,7 @@
     "fields": {
       "name": {
         "multiple": false,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "identifier",
@@ -1857,6 +1879,10 @@
           "named": true
         },
         {
+          "type": "var_pattern",
+          "named": true
+        },
+        {
           "type": "wildcard_pattern",
           "named": true
         }
@@ -2146,6 +2172,41 @@
     }
   },
   {
+    "type": "moded_type",
+    "named": true,
+    "fields": {
+      "type": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "_type",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "mut",
+          "named": true
+        },
+        {
+          "type": "take",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "mut",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "named_argument",
     "named": true,
     "fields": {
@@ -2400,6 +2461,10 @@
       "multiple": true,
       "required": false,
       "types": [
+        {
+          "type": "mut",
+          "named": true
+        },
         {
           "type": "take",
           "named": true
@@ -2685,6 +2750,10 @@
           "named": true
         },
         {
+          "type": "var_pattern",
+          "named": true
+        },
+        {
           "type": "wildcard_pattern",
           "named": true
         }
@@ -2734,6 +2803,10 @@
       "multiple": true,
       "required": true,
       "types": [
+        {
+          "type": "mut",
+          "named": true
+        },
         {
           "type": "self",
           "named": true
@@ -2976,6 +3049,11 @@
     }
   },
   {
+    "type": "take",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "trait_bounds",
     "named": true,
     "fields": {},
@@ -3110,6 +3188,10 @@
       "types": [
         {
           "type": "_type",
+          "named": true
+        },
+        {
+          "type": "moded_type",
           "named": true
         }
       ]
@@ -3290,6 +3372,10 @@
             "named": false
           },
           {
+            "type": "mut",
+            "named": false
+          },
+          {
             "type": "~",
             "named": false
           }
@@ -3410,6 +3496,22 @@
           "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "var_pattern",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -4001,6 +4103,10 @@
     "named": false
   },
   {
+    "type": "mut",
+    "named": false
+  },
+  {
     "type": "newtype",
     "named": false
   },
@@ -4070,7 +4176,7 @@
   },
   {
     "type": "take",
-    "named": true
+    "named": false
   },
   {
     "type": "trait",
