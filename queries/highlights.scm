@@ -56,7 +56,6 @@
 
 [
   (visibility)
-  (static)
   (take)
 ] @keyword.modifier
 

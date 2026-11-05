@@ -1454,10 +1454,6 @@
           "named": true
         },
         {
-          "type": "static",
-          "named": true
-        },
-        {
           "type": "visibility",
           "named": true
         },
@@ -4054,10 +4050,6 @@
   },
   {
     "type": "self",
-    "named": true
-  },
-  {
-    "type": "static",
     "named": true
   },
   {
