@@ -172,6 +172,7 @@ export default grammar({
         field("name", $.type_identifier),
         optional(field("type_parameters", $.type_parameters)),
         optional(seq(":", field("marker", $.identifier))),
+        repeat($.where_clause),
         field("body", $.field_declaration_list),
       ),
     field_declaration_list: ($) =>
@@ -385,12 +386,21 @@ export default grammar({
       seq("(", commaSep(choice($.self_parameter, $.parameter)), ")"),
     self_parameter: ($) => seq(optional($._mode), $.self),
     parameter: ($) =>
+      choice(
+        seq(
+          optional($.take),
+          field("name", choice($.identifier, $._mode_identifier)),
+          ":",
+          optional($._mode),
+          field("type", $._type),
+        ),
+        $._pattern_parameter,
+      ),
+    // `(a, b): take Pair` or `take (a, b): Pair`.
+    _pattern_parameter: ($) =>
       seq(
         optional($.take),
-        choice(
-          field("name", choice($.identifier, $._mode_identifier)),
-          field("pattern", $._parameter_pattern),
-        ),
+        field("pattern", $._parameter_pattern),
         ":",
         optional($._mode),
         field("type", $._type),
@@ -641,9 +651,27 @@ export default grammar({
     lambda_expression: ($) =>
       prec.right(
         seq(
-          choice("||", seq("|", commaSep($._binding_pattern), "|")),
-          field("body", choice(prec(1, $.block), $._expression)),
+          choice(
+            "||",
+            seq(
+              "|",
+              commaSep(choice($._binding_pattern, $.lambda_parameter)),
+              "|",
+            ),
+          ),
+          field(
+            "body",
+            choice(prec(1, $.block), $._expression, $.assignment_statement),
+          ),
         ),
+      ),
+    // `|text: String| ..`, `|P { x, .. }: P| x`.
+    lambda_parameter: ($) =>
+      seq(
+        field("pattern", $._binding_pattern),
+        ":",
+        optional($._mode),
+        field("type", $._type),
       ),
 
     function_expression: ($) =>
@@ -657,9 +685,12 @@ export default grammar({
       seq(
         "(",
         commaSep(
-          seq(
-            field("name", $.identifier),
-            optional(seq(":", optional($._mode), field("type", $._type))),
+          choice(
+            seq(
+              field("name", $.identifier),
+              optional(seq(":", optional($._mode), field("type", $._type))),
+            ),
+            alias($._pattern_parameter, $.parameter),
           ),
         ),
         ")",

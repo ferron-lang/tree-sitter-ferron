@@ -1,0 +1,351 @@
+==============================
+Opaque impl return types (D68)
+==============================
+
+fn circle(r: Int) -> impl Shape { Circle { r } }
+
+fn evens() -> impl Iterator[Int] { Evens { n: 0 } }
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (callable_type
+      (type_identifier))
+    (block
+      (expression_statement
+        (struct_literal
+          (constructor_identifier)
+          (field_initializer_list
+            (shorthand_field_initializer
+              (identifier)))))))
+  (function_declaration
+    (identifier)
+    (parameters)
+    (callable_type
+      (generic_type
+        (type_identifier)
+        (type_arguments
+          (type_identifier))))
+    (block
+      (expression_statement
+        (struct_literal
+          (constructor_identifier)
+          (field_initializer_list
+            (field_initializer
+              (identifier)
+              (number))))))))
+
+==================================
+Iterator impls with mut self (D68)
+==================================
+
+impl Iterator[Int] for Evens {
+  fn next(mut self) -> Option[Int] { None }
+}
+
+---
+
+(source_file
+  (impl_declaration
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (type_identifier)))
+    (type_identifier)
+    (declaration_list
+      (function_declaration
+        (identifier)
+        (parameters
+          (self_parameter
+            (mut)
+            (self)))
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)))
+        (block
+          (expression_statement
+            (constructor_identifier)))))))
+
+======================================================
+Callable bounds on functions, structs, and impls (D68)
+======================================================
+
+fn apply[F](f: F, x: Int) -> Int where F: Callable[(Int), Int] { f(x) }
+
+struct Map[I, F] where F: Callable[(Int), Int] {
+  inner: I
+  f: F
+}
+
+impl[I, F] Map[I, F] where F: Callable[(Int), Int] {
+  fn get(self, x: Int) -> Int { self.f(x) }
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (type_parameters
+      (type_parameter
+        (type_identifier)))
+    (parameters
+      (parameter
+        (identifier)
+        (type_identifier))
+      (parameter
+        (identifier)
+        (type_identifier)))
+    (type_identifier)
+    (where_clause
+      (where_predicate
+        (type_identifier)
+        (trait_bounds
+          (generic_type
+            (type_identifier)
+            (type_arguments
+              (tuple_type
+                (type_identifier))
+              (type_identifier))))))
+    (block
+      (expression_statement
+        (call_expression
+          (identifier)
+          (arguments
+            (identifier))))))
+  (struct_declaration
+    (type_identifier)
+    (type_parameters
+      (type_parameter
+        (type_identifier))
+      (type_parameter
+        (type_identifier)))
+    (where_clause
+      (where_predicate
+        (type_identifier)
+        (trait_bounds
+          (generic_type
+            (type_identifier)
+            (type_arguments
+              (tuple_type
+                (type_identifier))
+              (type_identifier))))))
+    (field_declaration_list
+      (field_declaration
+        (identifier)
+        (type_identifier))
+      (field_declaration
+        (identifier)
+        (type_identifier))))
+  (impl_declaration
+    (type_parameters
+      (type_parameter
+        (type_identifier))
+      (type_parameter
+        (type_identifier)))
+    (generic_type
+      (type_identifier)
+      (type_arguments
+        (type_identifier)
+        (type_identifier)))
+    (where_clause
+      (where_predicate
+        (type_identifier)
+        (trait_bounds
+          (generic_type
+            (type_identifier)
+            (type_arguments
+              (tuple_type
+                (type_identifier))
+              (type_identifier))))))
+    (declaration_list
+      (function_declaration
+        (identifier)
+        (parameters
+          (self_parameter
+            (self))
+          (parameter
+            (identifier)
+            (type_identifier)))
+        (type_identifier)
+        (block
+          (expression_statement
+            (call_expression
+              (member_expression
+                (self)
+                (identifier))
+              (arguments
+                (identifier)))))))))
+
+===========================
+Dyn trait field types (D68)
+===========================
+
+struct Holder {
+  shape: dyn Shape
+  items: dyn Iterator[Int]
+}
+
+---
+
+(source_file
+  (struct_declaration
+    (type_identifier)
+    (field_declaration_list
+      (field_declaration
+        (identifier)
+        (callable_type
+          (type_identifier)))
+      (field_declaration
+        (identifier)
+        (callable_type
+          (generic_type
+            (type_identifier)
+            (type_arguments
+              (type_identifier))))))))
+
+==========================
+Typed lambda parameters
+==========================
+
+fn main() {
+  let shout = |text: String| text.to_upper()
+  let pick = |P { x, .. }: P, n| x + n
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters)
+    (block
+      (let_statement
+        (identifier)
+        (lambda_expression
+          (lambda_parameter
+            (identifier)
+            (type_identifier))
+          (call_expression
+            (member_expression
+              (identifier)
+              (identifier))
+            (arguments))))
+      (let_statement
+        (identifier)
+        (lambda_expression
+          (lambda_parameter
+            (struct_pattern
+              (constructor_identifier)
+              (field_pattern
+                (identifier))
+              (rest_pattern))
+            (type_identifier))
+          (identifier)
+          (binary_expression
+            (identifier)
+            (identifier)))))))
+
+===========================
+Assignment as a lambda body
+===========================
+
+fn main() {
+  let bump = || count.value += 1
+  let set = |c: Counter| c.n = 2
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters)
+    (block
+      (let_statement
+        (identifier)
+        (lambda_expression
+          (assignment_statement
+            (member_expression
+              (identifier)
+              (identifier))
+            (number))))
+      (let_statement
+        (identifier)
+        (lambda_expression
+          (lambda_parameter
+            (identifier)
+            (type_identifier))
+          (assignment_statement
+            (member_expression
+              (identifier)
+              (identifier))
+            (number)))))))
+
+===============================================
+Destructuring and take closure parameters (D68)
+===============================================
+
+fn main() {
+  let add = fn((a, b): take Tuple[Int, Int]) -> Int { a + b }
+  let span = fn(P { x, y }: P, take (l, _): Pair, n: Int) -> Int { x }
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters)
+    (block
+      (let_statement
+        (identifier)
+        (function_expression
+          (closure_parameters
+            (parameter
+              (tuple_pattern
+                (identifier)
+                (identifier))
+              (take)
+              (generic_type
+                (type_identifier)
+                (type_arguments
+                  (type_identifier)
+                  (type_identifier)))))
+          (type_identifier)
+          (block
+            (expression_statement
+              (binary_expression
+                (identifier)
+                (identifier))))))
+      (let_statement
+        (identifier)
+        (function_expression
+          (closure_parameters
+            (parameter
+              (struct_pattern
+                (constructor_identifier)
+                (field_pattern
+                  (identifier))
+                (field_pattern
+                  (identifier)))
+              (type_identifier))
+            (parameter
+              (take)
+              (tuple_pattern
+                (identifier)
+                (wildcard_pattern))
+              (type_identifier))
+            (identifier)
+            (type_identifier))
+          (type_identifier)
+          (block
+            (expression_statement
+              (identifier))))))))
