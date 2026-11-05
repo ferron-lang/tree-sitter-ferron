@@ -1,7 +1,9 @@
 (line_comment) @comment
 (block_comment) @comment
 
-(string) @string
+; Only the quotes and text are string: an interpolation's `{expr}` keeps
+; expression colors, so `{"left":<8}` shows a nested string literal.
+(string "\"" @string)
 (raw_string) @string
 (string_content) @string
 (escape_sequence) @string.escape
