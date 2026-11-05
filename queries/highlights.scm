@@ -18,6 +18,7 @@
   "as"
   "const"
   "dyn"
+  "send"
   "fn"
   "impl"
   "on"

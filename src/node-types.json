@@ -966,6 +966,16 @@
     "type": "callable_type",
     "named": true,
     "fields": {
+      "marker": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "send_marker",
+            "named": true
+          }
+        ]
+      },
       "type": {
         "multiple": false,
         "required": true,
@@ -2819,6 +2829,11 @@
     }
   },
   {
+    "type": "send_marker",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "shorthand_field_initializer",
     "named": true,
     "fields": {},
@@ -4161,6 +4176,10 @@
   {
     "type": "self",
     "named": true
+  },
+  {
+    "type": "send",
+    "named": false
   },
   {
     "type": "static",

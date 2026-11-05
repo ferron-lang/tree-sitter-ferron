@@ -464,8 +464,19 @@ export default grammar({
         ),
       ),
 
+    // `dyn Callable[(A), R] + send` may cross actors (D68).
     callable_type: ($) =>
-      seq(choice("dyn", "impl"), field("type", choice($.generic_type, $.type_identifier))),
+      choice(
+        seq("impl", field("type", choice($.generic_type, $.type_identifier))),
+        prec.right(
+          seq(
+            "dyn",
+            field("type", choice($.generic_type, $.type_identifier)),
+            optional(field("marker", $.send_marker)),
+          ),
+        ),
+      ),
+    send_marker: (_) => seq("+", "send"),
 
     // Modes appear in function types: `Callable[(mut Rng, Int), T]`.
     tuple_type: ($) => seq("(", commaSep(choice($._type, $.moded_type)), ")"),

@@ -1,0 +1,67 @@
+==========================
+Send marker on dyn Callable types
+==========================
+
+struct Job {
+  run: dyn Callable[(Int), Unit] + send,
+}
+
+fn all(jobs: List[dyn Callable[(), Unit] + send], f: dyn Callable[(Int), Int]) -> dyn Callable[(), Unit] + send {
+  reply.send(f)
+}
+
+---
+
+(source_file
+  (struct_declaration
+    (type_identifier)
+    (field_declaration_list
+      (field_declaration
+        (identifier)
+        (callable_type
+          (generic_type
+            (type_identifier)
+            (type_arguments
+              (tuple_type
+                (type_identifier))
+              (type_identifier)))
+          (send_marker)))))
+  (function_declaration
+    (identifier)
+    (parameters
+      (parameter
+        (identifier)
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (callable_type
+              (generic_type
+                (type_identifier)
+                (type_arguments
+                  (tuple_type)
+                  (type_identifier)))
+              (send_marker)))))
+      (parameter
+        (identifier)
+        (callable_type
+          (generic_type
+            (type_identifier)
+            (type_arguments
+              (tuple_type
+                (type_identifier))
+              (type_identifier))))))
+    (callable_type
+      (generic_type
+        (type_identifier)
+        (type_arguments
+          (tuple_type)
+          (type_identifier)))
+      (send_marker))
+    (block
+      (expression_statement
+        (call_expression
+          (member_expression
+            (identifier)
+            (identifier))
+          (arguments
+            (identifier)))))))
