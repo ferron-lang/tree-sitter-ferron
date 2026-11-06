@@ -67,6 +67,7 @@ export default grammar({
     [$._expression, $.struct_literal],
     [$._expression, $.path_type],
     [$._expression, $.label],
+    [$.range_expression],
   ],
 
   rules: {
@@ -113,23 +114,29 @@ export default grammar({
         commaSep(choice($.attribute_named_argument, $._attribute_value)),
         ")",
       ),
-    // `rename: "term"`, `close = LLVMContextDispose`.
+    // `rename: "term"`, `close = f`, `align = 8`, `offsets = [0, 4]`.
     attribute_named_argument: ($) =>
       seq(
         field("name", $.identifier),
         choice(":", "="),
         field("value", $._attribute_value),
       ),
+    // The compiler reads attribute arguments as tokens; these are the forms
+    // in use, plus a list (`alias: ["host", "server"]`) and a path
+    // (`skip_if: Option.is_none`).
     _attribute_value: ($) =>
       choice(
         $.identifier,
         $.type_identifier,
+        alias($.path_type, $.scoped_identifier),
+        $.attribute_list,
         $.string,
         $.raw_string,
         $.number,
         $.negative_number,
         $.boolean,
       ),
+    attribute_list: ($) => seq("[", commaSep($._attribute_value), "]"),
 
     // `use std.io.{Reader, Writer as W}`; segments may be keywords.
     use_declaration: ($) =>
@@ -156,6 +163,7 @@ export default grammar({
       ),
     wildcard_import: (_) => "_",
 
+    // `#[embed("path")] const NAME: String` takes its value from a file (D73).
     const_declaration: ($) =>
       seq(
         repeat($.attribute),
@@ -163,8 +171,7 @@ export default grammar({
         "const",
         field("name", choice($.identifier, $.type_identifier)),
         optional(seq(":", field("type", $._type))),
-        "=",
-        field("value", $._expression),
+        optional(seq("=", field("value", $._expression))),
       ),
 
     struct_declaration: ($) =>
@@ -455,8 +462,13 @@ export default grammar({
           field("arguments", $.type_arguments),
         ),
       ),
+    // `CFixed[u8, 256]` takes a length (D78).
     type_arguments: ($) =>
-      seq("[", commaSep1(choice($.associated_type_binding, $._type)), "]"),
+      seq(
+        "[",
+        commaSep1(choice($.associated_type_binding, $._type, $.number)),
+        "]",
+      ),
     associated_type_binding: ($) =>
       seq(field("name", $.type_identifier), "=", field("value", $._type)),
 
@@ -747,29 +759,35 @@ export default grammar({
         ),
       ),
 
-    // `a..b`, `a..=b`, and the endless `a..`; `..=` needs its end.
+    // `a..b`, `a..=b`, `..b`, `..=b`, the endless `a..`, and the full `..`
+    // (D74); `..=` needs its end. As in the compiler, `..` takes any operand
+    // that follows (`1..^1`, `0..-n`) but none before `{`: the open form is
+    // non-associative so both readings run, and the bounded one wins.
     range_expression: ($) =>
-      prec.left(
-        PREC.range,
-        choice(
-          seq(
-            field("start", $._expression),
-            field("operator", ".."),
-            optional(field("end", $._expression)),
+      choice(
+        prec.dynamic(
+          1,
+          prec.left(
+            PREC.range,
+            seq(
+              optional(field("start", $._expression)),
+              field("operator", choice("..", "..=")),
+              field("end", $._expression),
+            ),
           ),
-          seq(
-            field("start", $._expression),
-            field("operator", "..="),
-            field("end", $._expression),
-          ),
+        ),
+        prec(
+          PREC.range,
+          seq(optional(field("start", $._expression)), field("operator", "..")),
         ),
       ),
 
+    // `^k` is the position `k` values before the end (D74).
     unary_expression: ($) =>
       prec(
         PREC.unary,
         seq(
-          field("operator", choice("-", "!", "~", "move", "mut", "comptime")),
+          field("operator", choice("-", "!", "~", "^", "move", "mut")),
           field("argument", $._expression),
         ),
       ),

@@ -36,7 +36,6 @@
   "var"
   "with"
   "move"
-  "comptime"
   "not"
   "in"
   "and"

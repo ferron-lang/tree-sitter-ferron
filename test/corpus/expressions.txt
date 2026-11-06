@@ -405,3 +405,99 @@ fn f() -> Unit {
       (assignment_statement
         (identifier)
         (number)))))
+
+=====================================
+Range indexes and from-end keys (D74)
+=====================================
+
+fn f() -> Unit {
+  let a = xs[1..3]
+  let b = xs[2..]
+  let c = xs[..2]
+  let d = xs[..=1]
+  let e = xs[..]
+  let g = xs[^1]
+  let h = xs[1..^1]
+  let i = Foo { ..base }
+  let j = a ^ b
+  let k = -near..-far
+  for n in 100.. {
+  }
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters)
+    (type_identifier)
+    (block
+      (let_statement
+        (identifier)
+        (index_expression
+          (identifier)
+          (range_expression
+            (number)
+            (number))))
+      (let_statement
+        (identifier)
+        (index_expression
+          (identifier)
+          (range_expression
+            (number))))
+      (let_statement
+        (identifier)
+        (index_expression
+          (identifier)
+          (range_expression
+            (number))))
+      (let_statement
+        (identifier)
+        (index_expression
+          (identifier)
+          (range_expression
+            (number))))
+      (let_statement
+        (identifier)
+        (index_expression
+          (identifier)
+          (range_expression)))
+      (let_statement
+        (identifier)
+        (index_expression
+          (identifier)
+          (unary_expression
+            (number))))
+      (let_statement
+        (identifier)
+        (index_expression
+          (identifier)
+          (range_expression
+            (number)
+            (unary_expression
+              (number)))))
+      (let_statement
+        (identifier)
+        (struct_literal
+          (constructor_identifier)
+          (field_initializer_list
+            (base_field_initializer
+              (identifier)))))
+      (let_statement
+        (identifier)
+        (binary_expression
+          (identifier)
+          (identifier)))
+      (let_statement
+        (identifier)
+        (range_expression
+          (unary_expression
+            (identifier))
+          (unary_expression
+            (identifier))))
+      (for_statement
+        (identifier)
+        (range_expression
+          (number))
+        (block)))))

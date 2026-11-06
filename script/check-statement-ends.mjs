@@ -30,6 +30,8 @@ if (files.length === 0) {
 
 const queryPath = join(mkdtempSync(join(tmpdir(), "ferron-ts-")), "splits.scm");
 writeFileSync(queryPath, "(block (_) @stmt)\n(match_arm) @arm\n(ERROR) @error\n(MISSING) @error\n");
+// The pinned CLI from package.json, not whichever `tree-sitter` is on PATH.
+const tsBin = join(root, "node_modules/.bin/tree-sitter");
 const tsArgs = ["--config-path", join(root, ".tree-sitter-config.json")];
 const env = { ...process.env, XDG_CACHE_HOME: process.env.XDG_CACHE_HOME ?? join(tmpdir(), "tree-sitter-cache") };
 
@@ -40,7 +42,7 @@ for (const file of files) {
   const expected = lines
     .filter((line) => line.startsWith("// stmt: ") || line.startsWith("// arm: "))
     .map((line) => line.slice("// ".length));
-  const output = execFileSync("tree-sitter", ["query", ...tsArgs, "--captures", queryPath, file], {
+  const output = execFileSync(tsBin, ["query", ...tsArgs, "--captures", queryPath, file], {
     cwd: root,
     env,
     encoding: "utf8",

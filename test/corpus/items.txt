@@ -404,7 +404,11 @@ pub resource File {
 }
 const DIGITS: String = r"\d+"
 const TWO: WorkerCount =
-  comptime WorkerCount.parse("2")
+  WorkerCount.new(2)
+#[embed("greeting.txt")]
+const GREETING: String
+#[embed("./assets/blob.bin")]
+pub const BLOB: Bytes
 
 ---
 
@@ -421,14 +425,163 @@ const TWO: WorkerCount =
   (const_declaration
     (type_identifier)
     (type_identifier)
-    (unary_expression
-      (call_expression
-        (member_expression
-          (constructor_identifier)
+    (call_expression
+      (member_expression
+        (constructor_identifier)
+        (identifier))
+      (arguments
+        (number))))
+  (const_declaration
+    (attribute
+      (identifier)
+      (attribute_arguments
+        (string
+          (string_content))))
+    (type_identifier)
+    (type_identifier))
+  (const_declaration
+    (attribute
+      (identifier)
+      (attribute_arguments
+        (string
+          (string_content))))
+    (visibility)
+    (type_identifier)
+    (type_identifier)))
+
+===========================================
+Attribute lists, paths, and settings (D78)
+===========================================
+
+#[c_struct(packed)]
+#[c_layout(size = 8, align = 4, offsets = [0, 4])]
+struct Point {
+  x: i32,
+  tag: CFixed[u8, 3],
+}
+#[foreign_resource(close = destroy, send)]
+struct Handle {
+  #[data(rename: "host-name", alias: ["host", "server"])]
+  host: String,
+}
+type Event =
+  | Click(#[data(skip_if: Option.is_none)] button: Option[Int])
+
+---
+
+(source_file
+  (struct_declaration
+    (attribute
+      (identifier)
+      (attribute_arguments
+        (identifier)))
+    (attribute
+      (identifier)
+      (attribute_arguments
+        (attribute_named_argument
+          (identifier)
+          (number))
+        (attribute_named_argument
+          (identifier)
+          (number))
+        (attribute_named_argument
+          (identifier)
+          (attribute_list
+            (number)
+            (number)))))
+    (type_identifier)
+    (field_declaration_list
+      (field_declaration
+        (identifier)
+        (primitive_type))
+      (field_declaration
+        (identifier)
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (primitive_type)
+            (number))))))
+  (struct_declaration
+    (attribute
+      (identifier)
+      (attribute_arguments
+        (attribute_named_argument
+          (identifier)
           (identifier))
-        (arguments
-          (string
-            (string_content)))))))
+        (identifier)))
+    (type_identifier)
+    (field_declaration_list
+      (field_declaration
+        (attribute
+          (identifier)
+          (attribute_arguments
+            (attribute_named_argument
+              (identifier)
+              (string
+                (string_content)))
+            (attribute_named_argument
+              (identifier)
+              (attribute_list
+                (string
+                  (string_content))
+                (string
+                  (string_content))))))
+        (identifier)
+        (type_identifier))))
+  (type_declaration
+    (type_identifier)
+    (variant_list
+      (variant_declaration
+        (type_identifier)
+        (variant_field_list
+          (field_declaration
+            (attribute
+              (identifier)
+              (attribute_arguments
+                (attribute_named_argument
+                  (identifier)
+                  (scoped_identifier
+                    (type_identifier)
+                    (identifier)))))
+            (identifier)
+            (generic_type
+              (type_identifier)
+              (type_arguments
+                (type_identifier)))))))))
+
+===========================
+Sendable and affine bounds
+===========================
+
+fn spread[T: sendable + affine](items: take List[T]) -> Unit where T: Eq {
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (type_parameters
+      (type_parameter
+        (type_identifier)
+        (trait_bounds
+          (primitive_type)
+          (primitive_type))))
+    (parameters
+      (parameter
+        (identifier)
+        (take)
+        (generic_type
+          (type_identifier)
+          (type_arguments
+            (type_identifier)))))
+    (type_identifier)
+    (where_clause
+      (where_predicate
+        (type_identifier)
+        (trait_bounds
+          (type_identifier))))
+    (block)))
 
 =========================
 Newtypes and type aliases
