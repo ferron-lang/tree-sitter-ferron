@@ -351,7 +351,6 @@ export default grammar({
         seq(
           repeat($.attribute),
           optional($.visibility),
-          optional($.static),
           "fn",
           field("name", $.identifier),
           optional(field("type_parameters", $.type_parameters)),
@@ -361,7 +360,6 @@ export default grammar({
           optional(field("body", $.block)),
         ),
       ),
-    static: (_) => "static",
 
     // `extern "C" { pub fn f(x: i32) -> i32 }`: C signatures, no bodies;
     // C names may start upper-case (`LLVMContextCreate`).

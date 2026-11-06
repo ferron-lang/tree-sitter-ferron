@@ -1968,18 +1968,6 @@
             ]
           },
           {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "SYMBOL",
-                "name": "static"
-              },
-              {
-                "type": "BLANK"
-              }
-            ]
-          },
-          {
             "type": "STRING",
             "value": "fn"
           },
@@ -2065,10 +2053,6 @@
           }
         ]
       }
-    },
-    "static": {
-      "type": "STRING",
-      "value": "static"
     },
     "extern_block": {
       "type": "SEQ",

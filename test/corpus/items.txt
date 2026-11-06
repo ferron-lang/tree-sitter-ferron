@@ -185,7 +185,7 @@ Trait, impl, and where clauses
 
 pub trait Error: Display + Debug {
   type Item
-  static fn make[U](seed: Int) -> Option[U]
+  fn make[U](seed: Int) -> Option[U]
   fn source(self) -> Option[AnyError] { return None }
 }
 
@@ -213,7 +213,6 @@ impl[K, V: affine] BitOr[Map[K, V]] for Map[K, V]
       (associated_type_declaration
         (type_identifier))
       (function_declaration
-        (static)
         (identifier)
         (type_parameters
           (type_parameter

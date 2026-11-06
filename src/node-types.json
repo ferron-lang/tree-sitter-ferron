@@ -1490,10 +1490,6 @@
           "named": true
         },
         {
-          "type": "static",
-          "named": true
-        },
-        {
           "type": "visibility",
           "named": true
         },
@@ -4304,10 +4300,6 @@
   {
     "type": "send",
     "named": false
-  },
-  {
-    "type": "static",
-    "named": true
   },
   {
     "type": "string_content",

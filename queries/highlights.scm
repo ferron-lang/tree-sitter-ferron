@@ -61,7 +61,6 @@
 
 [
   (visibility)
-  (static)
   (take)
   (mut)
 ] @keyword.modifier
