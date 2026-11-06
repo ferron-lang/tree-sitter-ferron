@@ -20,7 +20,9 @@ const PREC = {
   add: 10,
   multiply: 11,
   unary: 12,
-  postfix: 13,
+  // `**` binds tighter than a unary operator on its left (D75).
+  power: 13,
+  postfix: 14,
 };
 
 const ASSIGNMENT_OPERATORS = [
@@ -35,6 +37,7 @@ const ASSIGNMENT_OPERATORS = [
   "^=",
   "<<=",
   ">>=",
+  "**=",
   "&+=",
   "&-=",
   "&*=",
@@ -731,6 +734,15 @@ export default grammar({
               field("operator", operator),
               field("right", $._expression),
             ),
+          ),
+        ),
+        // Right-associative: `2 ** 3 ** 2` is `2 ** (3 ** 2)`.
+        prec.right(
+          PREC.power,
+          seq(
+            field("left", $._expression),
+            field("operator", "**"),
+            field("right", $._expression),
           ),
         ),
       ),

@@ -347,3 +347,61 @@ fn f() -> Unit {
           (number)
           (number)
           (number))))))
+
+==============
+Power operator
+==============
+
+fn f() -> Unit {
+  let a = -2 ** 2
+  let b = 2 ** 3 ** 2
+  let c = 2 ** -1 * 3
+  let d = p.x ** 2 + xs[i] ** 2
+  n **= 3
+}
+
+---
+
+(source_file
+  (function_declaration
+    (identifier)
+    (parameters)
+    (type_identifier)
+    (block
+      (let_statement
+        (identifier)
+        (unary_expression
+          (binary_expression
+            (number)
+            (number))))
+      (let_statement
+        (identifier)
+        (binary_expression
+          (number)
+          (binary_expression
+            (number)
+            (number))))
+      (let_statement
+        (identifier)
+        (binary_expression
+          (binary_expression
+            (number)
+            (unary_expression
+              (number)))
+          (number)))
+      (let_statement
+        (identifier)
+        (binary_expression
+          (binary_expression
+            (member_expression
+              (identifier)
+              (identifier))
+            (number))
+          (binary_expression
+            (index_expression
+              (identifier)
+              (identifier))
+            (number))))
+      (assignment_statement
+        (identifier)
+        (number)))))
